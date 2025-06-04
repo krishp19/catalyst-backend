@@ -73,7 +73,7 @@ export class User {
   @BeforeInsert()
   @BeforeUpdate()
   async hashPassword() {
-    if (this.password) {
+    if (this.password && this.password.length < 60) {
       this.password = await bcrypt.hash(this.password, 10);
     }
   }

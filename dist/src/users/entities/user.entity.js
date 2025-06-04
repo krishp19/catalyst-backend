@@ -20,7 +20,7 @@ const vote_entity_1 = require("../../votes/entities/vote.entity");
 const notification_entity_1 = require("../../notifications/entities/notification.entity");
 let User = class User {
     async hashPassword() {
-        if (this.password) {
+        if (this.password && this.password.length < 60) {
             this.password = await bcrypt.hash(this.password, 10);
         }
     }

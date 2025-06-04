@@ -26,17 +26,18 @@ exports.AppModule = AppModule = __decorate([
         imports: [
             config_1.ConfigModule.forRoot({
                 isGlobal: true,
+                envFilePath: '.env.prod',
             }),
             typeorm_1.TypeOrmModule.forRootAsync({
                 imports: [config_1.ConfigModule],
                 inject: [config_1.ConfigService],
                 useFactory: (configService) => ({
                     type: 'postgres',
-                    host: configService.get('DB_HOST', 'localhost'),
-                    port: configService.get('DB_PORT', 5432),
-                    username: configService.get('DB_USERNAME', 'postgres'),
-                    password: configService.get('DB_PASSWORD', 'postgres'),
-                    database: configService.get('DB_DATABASE', 'reddit_clone'),
+                    host: configService.get('DB_HOST'),
+                    port: configService.get('DB_PORT'),
+                    username: configService.get('DB_USERNAME'),
+                    password: configService.get('DB_PASSWORD'),
+                    database: configService.get('DB_DATABASE'),
                     entities: [__dirname + '/**/*.entity{.ts,.js}'],
                     synchronize: configService.get('NODE_ENV', 'development') !== 'production',
                     logging: configService.get('NODE_ENV', 'development') !== 'production',

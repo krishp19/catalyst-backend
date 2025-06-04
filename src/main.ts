@@ -6,8 +6,18 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
-  // Enable CORS
-  app.enableCors();
+  // Enable CORS with specific origins and credentials
+  app.enableCors({
+    origin: [
+      'http://localhost:3000', // Default Next.js dev server
+      'http://localhost:3001', // Common alternate port
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001',
+    ],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+    allowedHeaders: 'Content-Type, Accept, Authorization',
+  });
   
   // Set global prefix
   app.setGlobalPrefix('api');
