@@ -1,0 +1,26 @@
+import { Community } from '../../communities/entities/community.entity';
+import { Post } from '../../posts/entities/post.entity';
+import { Comment } from '../../comments/entities/comment.entity';
+import { Vote } from '../../votes/entities/vote.entity';
+import { Notification } from '../../notifications/entities/notification.entity';
+export declare class User {
+    id: string;
+    username: string;
+    email: string;
+    password: string;
+    bio: string;
+    avatarUrl: string;
+    reputationScore: number;
+    postScore: number;
+    commentScore: number;
+    communityScore: number;
+    createdAt: Date;
+    updatedAt: Date;
+    createdCommunities: Community[];
+    posts: Post[];
+    comments: Comment[];
+    votes: Vote[];
+    notifications: Notification[];
+    hashPassword(): Promise<void>;
+    comparePassword(attempt: string): Promise<boolean>;
+}
