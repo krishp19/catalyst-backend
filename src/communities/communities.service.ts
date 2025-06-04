@@ -12,6 +12,7 @@ import { CreateCommunityDto } from './dto/create-community.dto';
 import { UpdateCommunityDto } from './dto/update-community.dto';
 import { User } from '../users/entities/user.entity';
 import { ReputationService } from '../reputation/reputation.service';
+import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
 
 @Injectable()
 export class CommunitiesService {
@@ -250,5 +251,38 @@ export class CommunitiesService {
     });
     
     return membership ? membership.role : null;
+  }
+
+  async getJoinedCommunities(
+    userId: string,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<PaginatedResponseDto<Community>> {
+    const [communities, total] = await this.communitiesRepository
+      .createQueryBuilder('community')
+      .innerJoin('community.members', 'member', 'member.userId = :userId', { userId })
+      .leftJoinAndSelect('community.members', 'members')
+      .select([
+        'community',
+        'COUNT(members.id) as memberCount',
+      ])
+      .groupBy('community.id')
+      .orderBy('community.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      items: communities,
+      meta: {
+        totalItems: total,
+        itemCount: communities.length,
+        itemsPerPage: limit,
+        totalPages,
+        currentPage: page,
+      },
+    };
   }
 }

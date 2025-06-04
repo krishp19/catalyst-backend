@@ -5,6 +5,7 @@ import { CreateCommunityDto } from './dto/create-community.dto';
 import { UpdateCommunityDto } from './dto/update-community.dto';
 import { User } from '../users/entities/user.entity';
 import { ReputationService } from '../reputation/reputation.service';
+import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
 export declare class CommunitiesService {
     private communitiesRepository;
     private communityMembersRepository;
@@ -52,4 +53,5 @@ export declare class CommunitiesService {
     }>;
     isMember(communityId: string, userId: string): Promise<boolean>;
     getMemberRole(communityId: string, userId: string): Promise<MemberRole | null>;
+    getJoinedCommunities(userId: string, page?: number, limit?: number): Promise<PaginatedResponseDto<Community>>;
 }

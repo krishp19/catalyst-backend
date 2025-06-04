@@ -8,8 +8,9 @@ import {
   Delete,
   UseGuards,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CommunitiesService } from './communities.service';
 import { CreateCommunityDto } from './dto/create-community.dto';
@@ -17,6 +18,8 @@ import { UpdateCommunityDto } from './dto/update-community.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { Community } from './entities/community.entity';
+import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
 
 @ApiTags('communities')
 @Controller('communities')
@@ -95,5 +98,25 @@ export class CommunitiesController {
       paginationDto.page,
       paginationDto.limit,
     );
+  }
+
+  @Get('user/joined')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get communities joined by the current user' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns paginated list of communities joined by the user',
+    type: PaginatedResponseDto<Community>,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getJoinedCommunities(
+    @CurrentUser() user: User,
+    @Query('page', new ParseIntPipe({ optional: true })) page = 1,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit = 10,
+  ) {
+    return this.communitiesService.getJoinedCommunities(user.id, page, limit);
   }
 }

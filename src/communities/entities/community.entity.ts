@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Post } from '../../posts/entities/post.entity';
+import { CommunityMember } from './community-member.entity';
 
 @Entity('communities')
 export class Community {
@@ -40,6 +41,9 @@ export class Community {
 
   @OneToMany(() => Post, (post) => post.community)
   posts: Post[];
+
+  @OneToMany(() => CommunityMember, (member) => member.community)
+  members: CommunityMember[];
 
   @CreateDateColumn()
   createdAt: Date;

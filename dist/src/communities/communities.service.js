@@ -192,6 +192,32 @@ let CommunitiesService = class CommunitiesService {
         });
         return membership ? membership.role : null;
     }
+    async getJoinedCommunities(userId, page = 1, limit = 10) {
+        const [communities, total] = await this.communitiesRepository
+            .createQueryBuilder('community')
+            .innerJoin('community.members', 'member', 'member.userId = :userId', { userId })
+            .leftJoinAndSelect('community.members', 'members')
+            .select([
+            'community',
+            'COUNT(members.id) as memberCount',
+        ])
+            .groupBy('community.id')
+            .orderBy('community.createdAt', 'DESC')
+            .skip((page - 1) * limit)
+            .take(limit)
+            .getManyAndCount();
+        const totalPages = Math.ceil(total / limit);
+        return {
+            items: communities,
+            meta: {
+                totalItems: total,
+                itemCount: communities.length,
+                itemsPerPage: limit,
+                totalPages,
+                currentPage: page,
+            },
+        };
+    }
 };
 exports.CommunitiesService = CommunitiesService;
 exports.CommunitiesService = CommunitiesService = __decorate([

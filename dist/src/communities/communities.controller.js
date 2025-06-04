@@ -22,6 +22,7 @@ const update_community_dto_1 = require("./dto/update-community.dto");
 const current_user_decorator_1 = require("../common/decorators/current-user.decorator");
 const user_entity_1 = require("../users/entities/user.entity");
 const pagination_dto_1 = require("../common/dto/pagination.dto");
+const paginated_response_dto_1 = require("../common/dto/paginated-response.dto");
 let CommunitiesController = class CommunitiesController {
     constructor(communitiesService) {
         this.communitiesService = communitiesService;
@@ -46,6 +47,9 @@ let CommunitiesController = class CommunitiesController {
     }
     getMembers(id, paginationDto) {
         return this.communitiesService.getMembers(id, paginationDto.page, paginationDto.limit);
+    }
+    async getJoinedCommunities(user, page = 1, limit = 10) {
+        return this.communitiesService.getJoinedCommunities(user.id, page, limit);
     }
 };
 exports.CommunitiesController = CommunitiesController;
@@ -128,6 +132,26 @@ __decorate([
     __metadata("design:paramtypes", [String, pagination_dto_1.PaginationDto]),
     __metadata("design:returntype", void 0)
 ], CommunitiesController.prototype, "getMembers", null);
+__decorate([
+    (0, common_1.Get)('user/joined'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get communities joined by the current user' }),
+    (0, swagger_1.ApiQuery)({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' }),
+    (0, swagger_1.ApiQuery)({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10)' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Returns paginated list of communities joined by the user',
+        type: (paginated_response_dto_1.PaginatedResponseDto),
+    }),
+    (0, swagger_1.ApiResponse)({ status: 401, description: 'Unauthorized' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Query)('page', new common_1.ParseIntPipe({ optional: true }))),
+    __param(2, (0, common_1.Query)('limit', new common_1.ParseIntPipe({ optional: true }))),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [user_entity_1.User, Object, Object]),
+    __metadata("design:returntype", Promise)
+], CommunitiesController.prototype, "getJoinedCommunities", null);
 exports.CommunitiesController = CommunitiesController = __decorate([
     (0, swagger_1.ApiTags)('communities'),
     (0, common_1.Controller)('communities'),

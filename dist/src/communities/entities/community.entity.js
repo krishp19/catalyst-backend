@@ -13,6 +13,7 @@ exports.Community = void 0;
 const typeorm_1 = require("typeorm");
 const user_entity_1 = require("../../users/entities/user.entity");
 const post_entity_1 = require("../../posts/entities/post.entity");
+const community_member_entity_1 = require("./community-member.entity");
 let Community = class Community {
 };
 exports.Community = Community;
@@ -53,6 +54,10 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => post_entity_1.Post, (post) => post.community),
     __metadata("design:type", Array)
 ], Community.prototype, "posts", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)(() => community_member_entity_1.CommunityMember, (member) => member.community),
+    __metadata("design:type", Array)
+], Community.prototype, "members", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)

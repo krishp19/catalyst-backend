@@ -3,12 +3,14 @@ import { CreateCommunityDto } from './dto/create-community.dto';
 import { UpdateCommunityDto } from './dto/update-community.dto';
 import { User } from '../users/entities/user.entity';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { Community } from './entities/community.entity';
+import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
 export declare class CommunitiesController {
     private readonly communitiesService;
     constructor(communitiesService: CommunitiesService);
-    create(createCommunityDto: CreateCommunityDto, user: User): Promise<import("./entities/community.entity").Community>;
+    create(createCommunityDto: CreateCommunityDto, user: User): Promise<Community>;
     findAll(paginationDto: PaginationDto): Promise<{
-        items: import("./entities/community.entity").Community[];
+        items: Community[];
         meta: {
             totalItems: number;
             itemCount: number;
@@ -17,8 +19,8 @@ export declare class CommunitiesController {
             currentPage: number;
         };
     }>;
-    findByName(name: string): Promise<import("./entities/community.entity").Community>;
-    update(id: string, updateCommunityDto: UpdateCommunityDto, user: User): Promise<import("./entities/community.entity").Community>;
+    findByName(name: string): Promise<Community>;
+    update(id: string, updateCommunityDto: UpdateCommunityDto, user: User): Promise<Community>;
     join(id: string, user: User): Promise<{
         message: string;
     }>;
@@ -45,4 +47,5 @@ export declare class CommunitiesController {
             currentPage: number;
         };
     }>;
+    getJoinedCommunities(user: User, page?: number, limit?: number): Promise<PaginatedResponseDto<Community>>;
 }
