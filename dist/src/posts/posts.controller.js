@@ -21,7 +21,6 @@ const create_post_dto_1 = require("./dto/create-post.dto");
 const update_post_dto_1 = require("./dto/update-post.dto");
 const current_user_decorator_1 = require("../common/decorators/current-user.decorator");
 const user_entity_1 = require("../users/entities/user.entity");
-const pagination_dto_1 = require("../common/dto/pagination.dto");
 let PostsController = class PostsController {
     constructor(postsService) {
         this.postsService = postsService;
@@ -29,8 +28,8 @@ let PostsController = class PostsController {
     create(createPostDto, user) {
         return this.postsService.create(createPostDto, user);
     }
-    findAll(paginationDto, sort = 'hot', communityId) {
-        return this.postsService.findAll(paginationDto.page, paginationDto.limit, sort, communityId);
+    findAll(page, limit, sort, communityId) {
+        return this.postsService.findAll(page || 1, limit || 10, sort || 'hot', communityId);
     }
     findOne(id) {
         return this.postsService.findOne(id);
@@ -74,11 +73,12 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Get all posts' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Return all posts' }),
     (0, common_1.Get)(),
-    __param(0, (0, common_1.Query)()),
-    __param(1, (0, common_1.Query)('sort')),
-    __param(2, (0, common_1.Query)('communityId')),
+    __param(0, (0, common_1.Query)('page')),
+    __param(1, (0, common_1.Query)('limit')),
+    __param(2, (0, common_1.Query)('sort')),
+    __param(3, (0, common_1.Query)('communityId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [pagination_dto_1.PaginationDto, String, String]),
+    __metadata("design:paramtypes", [Number, Number, String, String]),
     __metadata("design:returntype", void 0)
 ], PostsController.prototype, "findAll", null);
 __decorate([

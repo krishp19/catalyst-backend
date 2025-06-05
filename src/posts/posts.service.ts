@@ -86,10 +86,10 @@ export class PostsService {
         queryBuilder.orderBy('post.score', 'DESC');
         break;
       case 'hot': // Default - combination of score and recency
-        queryBuilder.orderBy(
-          `post.score * (1 + post.commentCount * 0.1) / (EXTRACT(EPOCH FROM NOW() - post.createdAt) / 3600 + 2)^1.8`,
-          'DESC',
-        );
+        queryBuilder
+          .orderBy('post.score', 'DESC')
+          .addOrderBy('post.commentCount', 'DESC')
+          .addOrderBy('post.createdAt', 'DESC');
         break;
       default:
         queryBuilder.orderBy('post.createdAt', 'DESC');
@@ -98,18 +98,23 @@ export class PostsService {
     // Always show pinned posts first
     queryBuilder.addOrderBy('post.isPinned', 'DESC');
     
-    const [posts, total] = await queryBuilder.getManyAndCount();
+    try {
+      const [posts, total] = await queryBuilder.getManyAndCount();
 
-    return {
-      items: posts,
-      meta: {
-        totalItems: total,
-        itemCount: posts.length,
-        itemsPerPage: limit,
-        totalPages: Math.ceil(total / limit),
-        currentPage: page,
-      },
-    };
+      return {
+        items: posts,
+        meta: {
+          totalItems: total,
+          itemCount: posts.length,
+          itemsPerPage: limit,
+          totalPages: Math.ceil(total / limit),
+          currentPage: page,
+        },
+      };
+    } catch (error) {
+      console.error('Error fetching posts:', error);
+      throw new BadRequestException('Failed to fetch posts');
+    }
   }
 
   async findOne(id: string): Promise<Post> {

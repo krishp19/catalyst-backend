@@ -18,6 +18,7 @@ import { UpdatePostDto } from './dto/update-post.dto';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { GetPostsDto } from './dto/get-posts.dto';
 
 @ApiTags('posts')
 @Controller('posts')
@@ -37,14 +38,15 @@ export class PostsController {
   @ApiResponse({ status: 200, description: 'Return all posts' })
   @Get()
   findAll(
-    @Query() paginationDto: PaginationDto,
-    @Query('sort') sort: string = 'hot',
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('sort') sort?: string,
     @Query('communityId') communityId?: string,
   ) {
     return this.postsService.findAll(
-      paginationDto.page,
-      paginationDto.limit,
-      sort,
+      page || 1,
+      limit || 10,
+      sort || 'hot',
       communityId,
     );
   }
