@@ -51,6 +51,25 @@ export class PostsController {
     );
   }
 
+  @ApiOperation({ summary: 'Get posts from communities the user has joined' })
+  @ApiResponse({ status: 200, description: 'Return posts from joined communities' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('joined')
+  findJoinedCommunitiesPosts(
+    @CurrentUser() user: User,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('sort') sort?: string,
+  ) {
+    return this.postsService.findPostsFromJoinedCommunities(
+      user.id,
+      page || 1,
+      limit || 10,
+      sort || 'hot',
+    );
+  }
+
   @ApiOperation({ summary: 'Get a post by ID' })
   @ApiResponse({ status: 200, description: 'Return the post' })
   @Get(':id')

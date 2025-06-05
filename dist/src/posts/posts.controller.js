@@ -31,6 +31,9 @@ let PostsController = class PostsController {
     findAll(page, limit, sort, communityId) {
         return this.postsService.findAll(page || 1, limit || 10, sort || 'hot', communityId);
     }
+    findJoinedCommunitiesPosts(user, page, limit, sort) {
+        return this.postsService.findPostsFromJoinedCommunities(user.id, page || 1, limit || 10, sort || 'hot');
+    }
     findOne(id) {
         return this.postsService.findOne(id);
     }
@@ -81,6 +84,20 @@ __decorate([
     __metadata("design:paramtypes", [Number, Number, String, String]),
     __metadata("design:returntype", void 0)
 ], PostsController.prototype, "findAll", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Get posts from communities the user has joined' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Return posts from joined communities' }),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('joined'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Query)('page')),
+    __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('sort')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [user_entity_1.User, Number, Number, String]),
+    __metadata("design:returntype", void 0)
+], PostsController.prototype, "findJoinedCommunitiesPosts", null);
 __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Get a post by ID' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Return the post' }),

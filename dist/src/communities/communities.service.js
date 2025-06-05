@@ -204,6 +204,13 @@ let CommunitiesService = class CommunitiesService {
         });
         return !!membership;
     }
+    async getUserCommunities(userId) {
+        return this.communityMembersRepository.find({
+            where: { userId },
+            relations: ['community'],
+            select: ['communityId', 'role', 'joinedAt']
+        });
+    }
     async getMemberRole(communityId, userId) {
         const membership = await this.communityMembersRepository.findOne({
             where: {

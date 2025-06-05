@@ -15,6 +15,16 @@ export declare class PostsService {
     private notificationsService;
     constructor(postsRepository: Repository<Post>, votesRepository: Repository<Vote>, communitiesService: CommunitiesService, reputationService: ReputationService, notificationsService: NotificationsService);
     create(createPostDto: CreatePostDto, user: User): Promise<Post>;
+    findPostsFromJoinedCommunities(userId: string, page?: number, limit?: number, sort?: string): Promise<{
+        items: Post[];
+        meta: {
+            totalItems: number;
+            itemCount: number;
+            itemsPerPage: number;
+            totalPages: number;
+            currentPage: number;
+        };
+    }>;
     findAll(page?: number, limit?: number, sort?: string, communityId?: string): Promise<{
         items: Post[];
         meta: {

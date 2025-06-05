@@ -64,6 +64,68 @@ export class PostsService {
     return savedPost;
   }
 
+  async findPostsFromJoinedCommunities(userId: string, page = 1, limit = 10, sort = 'hot') {
+    // Get all community IDs the user has joined
+    const userCommunities = await this.communitiesService.getUserCommunities(userId);
+    
+    if (userCommunities.length === 0) {
+      return {
+        items: [],
+        meta: {
+          totalItems: 0,
+          itemCount: 0,
+          itemsPerPage: limit,
+          totalPages: 0,
+          currentPage: page,
+        },
+      };
+    }
+    
+    const communityIds = userCommunities.map(comm => comm.communityId);
+    
+    const queryBuilder = this.postsRepository
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.author', 'author')
+      .leftJoinAndSelect('post.community', 'community')
+      .where('post.communityId IN (:...communityIds)', { communityIds })
+      .skip((page - 1) * limit)
+      .take(limit);
+    
+    // Apply sorting
+    switch (sort) {
+      case 'new':
+        queryBuilder.orderBy('post.createdAt', 'DESC');
+        break;
+      case 'top':
+        queryBuilder.orderBy('post.score', 'DESC');
+        break;
+      case 'hot': // Default - combination of score and recency
+        queryBuilder
+          .orderBy('post.score', 'DESC')
+          .addOrderBy('post.commentCount', 'DESC')
+          .addOrderBy('post.createdAt', 'DESC');
+        break;
+      default:
+        queryBuilder.orderBy('post.createdAt', 'DESC');
+    }
+    
+    // Always show pinned posts first
+    queryBuilder.addOrderBy('post.isPinned', 'DESC');
+    
+    const [items, totalItems] = await queryBuilder.getManyAndCount();
+    
+    return {
+      items,
+      meta: {
+        totalItems,
+        itemCount: items.length,
+        itemsPerPage: limit,
+        totalPages: Math.ceil(totalItems / limit),
+        currentPage: page,
+      },
+    };
+  }
+
   async findAll(page = 1, limit = 10, sort = 'hot', communityId?: string) {
     const queryBuilder = this.postsRepository
       .createQueryBuilder('post')

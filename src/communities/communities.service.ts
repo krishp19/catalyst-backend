@@ -270,6 +270,19 @@ export class CommunitiesService {
     return !!membership;
   }
 
+  /**
+   * Get all communities that a user has joined
+   * @param userId - The ID of the user
+   * @returns Array of community memberships with community details
+   */
+  async getUserCommunities(userId: string) {
+    return this.communityMembersRepository.find({
+      where: { userId },
+      relations: ['community'],
+      select: ['communityId', 'role', 'joinedAt']
+    });
+  }
+
   async getMemberRole(communityId: string, userId: string): Promise<MemberRole | null> {
     const membership = await this.communityMembersRepository.findOne({
       where: {

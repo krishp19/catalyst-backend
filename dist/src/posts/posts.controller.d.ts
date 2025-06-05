@@ -16,6 +16,16 @@ export declare class PostsController {
             currentPage: number;
         };
     }>;
+    findJoinedCommunitiesPosts(user: User, page?: number, limit?: number, sort?: string): Promise<{
+        items: import("./entities/post.entity").Post[];
+        meta: {
+            totalItems: number;
+            itemCount: number;
+            itemsPerPage: number;
+            totalPages: number;
+            currentPage: number;
+        };
+    }>;
     findOne(id: string): Promise<import("./entities/post.entity").Post>;
     update(id: string, updatePostDto: UpdatePostDto, user: User): Promise<import("./entities/post.entity").Post>;
     remove(id: string, user: User): Promise<{

@@ -54,6 +54,7 @@ export declare class CommunitiesService {
         };
     }>;
     isMember(communityId: string, userId: string): Promise<boolean>;
+    getUserCommunities(userId: string): Promise<CommunityMember[]>;
     getMemberRole(communityId: string, userId: string): Promise<MemberRole | null>;
     getJoinedCommunities(userId: string, page?: number, limit?: number): Promise<PaginatedResponseDto<Community>>;
 }
