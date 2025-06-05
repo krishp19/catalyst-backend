@@ -1,4 +1,5 @@
 import { Community } from '../../communities/entities/community.entity';
+import { CommunityMember } from '../../communities/entities/community-member.entity';
 import { Post } from '../../posts/entities/post.entity';
 import { Comment } from '../../comments/entities/comment.entity';
 import { Vote } from '../../votes/entities/vote.entity';
@@ -17,6 +18,8 @@ export declare class User {
     createdAt: Date;
     updatedAt: Date;
     createdCommunities: Community[];
+    communityMemberships: CommunityMember[];
+    isMemberOf(communityId: string): boolean;
     posts: Post[];
     comments: Comment[];
     votes: Vote[];

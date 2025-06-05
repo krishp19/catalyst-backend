@@ -20,6 +20,7 @@ import { User } from '../users/entities/user.entity';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { Community } from './entities/community.entity';
 import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
+import { CommunityWithJoinedStatus } from './types/community.types';
 
 @ApiTags('communities')
 @Controller('communities')
@@ -36,6 +37,15 @@ export class CommunitiesController {
     @CurrentUser() user: User,
   ) {
     return this.communitiesService.create(createCommunityDto, user);
+  }
+
+  @ApiOperation({ summary: 'Get all communities with joined status for current user' })
+  @ApiResponse({ status: 200, description: 'Return all communities with joined status' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('with-joined-status')
+  async findAllWithJoinedStatus(@CurrentUser() user: User): Promise<CommunityWithJoinedStatus[]> {
+    return this.communitiesService.findAllWithJoinedStatus(user.id);
   }
 
   @ApiOperation({ summary: 'Get all communities' })

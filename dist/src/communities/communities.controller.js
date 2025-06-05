@@ -30,6 +30,9 @@ let CommunitiesController = class CommunitiesController {
     create(createCommunityDto, user) {
         return this.communitiesService.create(createCommunityDto, user);
     }
+    async findAllWithJoinedStatus(user) {
+        return this.communitiesService.findAllWithJoinedStatus(user.id);
+    }
     findAll(paginationDto) {
         return this.communitiesService.findAll(paginationDto.page, paginationDto.limit);
     }
@@ -66,6 +69,17 @@ __decorate([
         user_entity_1.User]),
     __metadata("design:returntype", void 0)
 ], CommunitiesController.prototype, "create", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Get all communities with joined status for current user' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Return all communities with joined status' }),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('with-joined-status'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [user_entity_1.User]),
+    __metadata("design:returntype", Promise)
+], CommunitiesController.prototype, "findAllWithJoinedStatus", null);
 __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Get all communities' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Return all communities' }),

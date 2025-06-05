@@ -64,4 +64,18 @@ export class UsersController {
   getReputationBreakdown(@Param('userId') userId: string) {
     return this.usersService.getReputationBreakdown(userId);
   }
+
+  @ApiOperation({ summary: 'Get communities that the current user has joined' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Returns an array of communities that the current user has joined',
+    type: [Object],
+    isArray: true
+  })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Get('me/communities')
+  async getMyCommunities(@CurrentUser() user: User) {
+    return this.usersService.getJoinedCommunities(user.id);
+  }
 }

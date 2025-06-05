@@ -2,6 +2,7 @@ import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { Community } from 'src/communities/entities/community.entity';
 export declare class UsersService {
     private usersRepository;
     constructor(usersRepository: Repository<User>);
@@ -28,4 +29,5 @@ export declare class UsersService {
             fromCommunities: number;
         };
     }>;
+    getJoinedCommunities(userId: string): Promise<Community[]>;
 }

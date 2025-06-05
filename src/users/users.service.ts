@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { Community } from 'src/communities/entities/community.entity';
 
 @Injectable()
 export class UsersService {
@@ -107,5 +108,24 @@ export class UsersService {
         fromCommunities: user.communityScore,
       },
     };
+  }
+
+  /**
+   * Get all communities that the user has joined
+   * @param userId - The ID of the user
+   * @returns Array of communities the user has joined
+   */
+  async getJoinedCommunities(userId: string) {
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+      relations: ['communityMemberships', 'communityMemberships.community'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    // Extract communities from memberships
+    return user.communityMemberships?.map(membership => membership.community) || [];
   }
 }

@@ -11,6 +11,7 @@ import {
 import * as bcrypt from 'bcrypt';
 import { Exclude } from 'class-transformer';
 import { Community } from '../../communities/entities/community.entity';
+import { CommunityMember } from '../../communities/entities/community-member.entity';
 import { Post } from '../../posts/entities/post.entity';
 import { Comment } from '../../comments/entities/comment.entity';
 import { Vote } from '../../votes/entities/vote.entity';
@@ -57,6 +58,15 @@ export class User {
 
   @OneToMany(() => Community, (community) => community.creator)
   createdCommunities: Community[];
+
+  @OneToMany('CommunityMember', 'user')
+  communityMemberships: CommunityMember[];
+
+  // Helper method to check if user is a member of a specific community
+  isMemberOf(communityId: string): boolean {
+    if (!this.communityMemberships) return false;
+    return this.communityMemberships.some(member => member.communityId === communityId);
+  }
 
   @OneToMany(() => Post, (post) => post.author)
   posts: Post[];

@@ -5,10 +5,12 @@ import { User } from '../users/entities/user.entity';
 import { PaginationDto } from '../common/dto/pagination.dto';
 import { Community } from './entities/community.entity';
 import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
+import { CommunityWithJoinedStatus } from './types/community.types';
 export declare class CommunitiesController {
     private readonly communitiesService;
     constructor(communitiesService: CommunitiesService);
     create(createCommunityDto: CreateCommunityDto, user: User): Promise<Community>;
+    findAllWithJoinedStatus(user: User): Promise<CommunityWithJoinedStatus[]>;
     findAll(paginationDto: PaginationDto): Promise<{
         items: Community[];
         meta: {

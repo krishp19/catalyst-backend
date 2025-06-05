@@ -15,4 +15,5 @@ export declare class UsersController {
             fromCommunities: number;
         };
     }>;
+    getMyCommunities(user: User): Promise<import("../communities/entities/community.entity").Community[]>;
 }

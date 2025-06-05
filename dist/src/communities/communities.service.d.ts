@@ -6,12 +6,14 @@ import { UpdateCommunityDto } from './dto/update-community.dto';
 import { User } from '../users/entities/user.entity';
 import { ReputationService } from '../reputation/reputation.service';
 import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
+import { CommunityWithJoinedStatus } from './types/community.types';
 export declare class CommunitiesService {
     private communitiesRepository;
     private communityMembersRepository;
     private reputationService;
     constructor(communitiesRepository: Repository<Community>, communityMembersRepository: Repository<CommunityMember>, reputationService: ReputationService);
     create(createCommunityDto: CreateCommunityDto, user: User): Promise<Community>;
+    findAllWithJoinedStatus(userId?: string): Promise<CommunityWithJoinedStatus[]>;
     findAll(page?: number, limit?: number): Promise<{
         items: Community[];
         meta: {

@@ -19,6 +19,11 @@ const comment_entity_1 = require("../../comments/entities/comment.entity");
 const vote_entity_1 = require("../../votes/entities/vote.entity");
 const notification_entity_1 = require("../../notifications/entities/notification.entity");
 let User = class User {
+    isMemberOf(communityId) {
+        if (!this.communityMemberships)
+            return false;
+        return this.communityMemberships.some(member => member.communityId === communityId);
+    }
     async hashPassword() {
         if (this.password && this.password.length < 60) {
             this.password = await bcrypt.hash(this.password, 10);
@@ -82,6 +87,10 @@ __decorate([
     (0, typeorm_1.OneToMany)(() => community_entity_1.Community, (community) => community.creator),
     __metadata("design:type", Array)
 ], User.prototype, "createdCommunities", void 0);
+__decorate([
+    (0, typeorm_1.OneToMany)('CommunityMember', 'user'),
+    __metadata("design:type", Array)
+], User.prototype, "communityMemberships", void 0);
 __decorate([
     (0, typeorm_1.OneToMany)(() => post_entity_1.Post, (post) => post.author),
     __metadata("design:type", Array)

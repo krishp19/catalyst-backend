@@ -101,6 +101,16 @@ let UsersService = class UsersService {
             },
         };
     }
+    async getJoinedCommunities(userId) {
+        const user = await this.usersRepository.findOne({
+            where: { id: userId },
+            relations: ['communityMemberships', 'communityMemberships.community'],
+        });
+        if (!user) {
+            throw new common_1.NotFoundException(`User with ID ${userId} not found`);
+        }
+        return user.communityMemberships?.map(membership => membership.community) || [];
+    }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([

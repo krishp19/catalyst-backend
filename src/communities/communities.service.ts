@@ -13,6 +13,7 @@ import { UpdateCommunityDto } from './dto/update-community.dto';
 import { User } from '../users/entities/user.entity';
 import { ReputationService } from '../reputation/reputation.service';
 import { PaginatedResponseDto } from '../common/dto/paginated-response.dto';
+import { CommunityWithJoinedStatus } from './types/community.types';
 
 @Injectable()
 export class CommunitiesService {
@@ -62,6 +63,33 @@ export class CommunitiesService {
     await this.reputationService.addCommunityCreationPoints(user.id);
     
     return savedCommunity;
+  }
+
+  async findAllWithJoinedStatus(userId?: string): Promise<CommunityWithJoinedStatus[]> {
+    const communities = await this.communitiesRepository.find({
+      relations: ['creator'],
+      order: { memberCount: 'DESC' },
+    });
+
+    if (!userId) {
+      return communities.map(community => ({
+        ...community,
+        isJoined: false,
+      }));
+    }
+
+    // Get all community IDs where the user is a member
+    const userMemberships = await this.communityMembersRepository.find({
+      where: { userId },
+      select: ['communityId'],
+    });
+    
+    const joinedCommunityIds = new Set(userMemberships.map(m => m.communityId));
+
+    return communities.map(community => ({
+      ...community,
+      isJoined: joinedCommunityIds.has(community.id),
+    }));
   }
 
   async findAll(page = 1, limit = 10) {

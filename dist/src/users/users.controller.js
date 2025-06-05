@@ -36,6 +36,9 @@ let UsersController = class UsersController {
     getReputationBreakdown(userId) {
         return this.usersService.getReputationBreakdown(userId);
     }
+    async getMyCommunities(user) {
+        return this.usersService.getJoinedCommunities(user.id);
+    }
 };
 exports.UsersController = UsersController;
 __decorate([
@@ -83,6 +86,22 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], UsersController.prototype, "getReputationBreakdown", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Get communities that the current user has joined' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Returns an array of communities that the current user has joined',
+        type: [Object],
+        isArray: true
+    }),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('me/communities'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [user_entity_1.User]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getMyCommunities", null);
 exports.UsersController = UsersController = __decorate([
     (0, swagger_1.ApiTags)('users'),
     (0, common_1.Controller)('users'),
