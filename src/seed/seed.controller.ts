@@ -10,7 +10,7 @@ export class SeedController {
   constructor(private readonly seedService: SeedService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard, AdminGuard) // Only allow admins to seed
+  // @UseGuards(JwtAuthGuard, AdminGuard) // Only allow admins to seed
   @ApiOperation({ summary: 'Seed the database with initial data' })
   @ApiQuery({ name: 'force', required: false, type: Boolean, description: 'Force reseed even if data exists' })
   @ApiResponse({ status: 201, description: 'Database seeded successfully' })

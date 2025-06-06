@@ -10,4 +10,5 @@ export declare class TagsService {
     getPopularTags(limit?: number): Promise<Tag[]>;
     incrementTagUsage(tagIds: string[]): Promise<void>;
     decrementTagUsage(tagIds: string[]): Promise<void>;
+    searchTags(query: string, limit?: number): Promise<Tag[]>;
 }

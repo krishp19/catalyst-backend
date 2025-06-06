@@ -25,8 +25,11 @@ let TagsController = class TagsController {
     async getPopularTags(limit = 10) {
         return this.tagsService.getPopularTags(limit);
     }
-    async searchTags(query) {
-        return this.tagsService.getPopularTags(10);
+    async searchTags(query, limit = 10) {
+        if (!query || query.trim() === '') {
+            return this.tagsService.getPopularTags(limit);
+        }
+        return this.tagsService.searchTags(query, limit);
     }
 };
 exports.TagsController = TagsController;
@@ -46,9 +49,11 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Search tags by name' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Returns list of matching tags', type: [tag_entity_1.Tag] }),
     (0, swagger_1.ApiQuery)({ name: 'query', required: true, description: 'Search query for tag names' }),
+    (0, swagger_1.ApiQuery)({ name: 'limit', required: false, type: Number, description: 'Maximum number of tags to return (default: 10)' }),
     __param(0, (0, common_1.Query)('query')),
+    __param(1, (0, common_1.Query)('limit')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], TagsController.prototype, "searchTags", null);
 exports.TagsController = TagsController = __decorate([

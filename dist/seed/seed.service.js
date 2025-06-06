@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var SeedService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SeedService = void 0;
 const common_1 = require("@nestjs/common");
@@ -18,45 +19,54 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const tag_entity_1 = require("../tags/entities/tag.entity");
 const topic_entity_1 = require("../topics/entities/topic.entity");
-let SeedService = class SeedService {
-    constructor(tagRepository, topicRepository) {
+let SeedService = SeedService_1 = class SeedService {
+    constructor(tagRepository, topicRepository, dataSource) {
         this.tagRepository = tagRepository;
         this.topicRepository = topicRepository;
+        this.dataSource = dataSource;
+        this.logger = new common_1.Logger(SeedService_1.name);
     }
     async onModuleInit(force = false) {
-        const tagCount = await this.tagRepository.count();
-        const topicCount = await this.topicRepository.count();
-        if (tagCount === 0 || force) {
-            if (force) {
-                await this.tagRepository.clear();
-            }
-            await this.seedTags();
-        }
-        if (topicCount === 0 || force) {
-            if (force) {
-                await this.topicRepository.clear();
-            }
-            await this.seedTopics();
-        }
-    }
-    async seedTags() {
-        const queryRunner = this.tagRepository.manager.connection.createQueryRunner();
         try {
+            this.logger.log('Starting database seeding...');
+            const queryRunner = this.dataSource.createQueryRunner();
             await queryRunner.connect();
             await queryRunner.startTransaction();
-            await queryRunner.query('ALTER TABLE post_tags DISABLE TRIGGER ALL');
-            await queryRunner.query('TRUNCATE TABLE post_tags CASCADE');
-            await queryRunner.query('TRUNCATE TABLE tags CASCADE');
-            await queryRunner.query('ALTER TABLE post_tags ENABLE TRIGGER ALL');
-            await queryRunner.commitTransaction();
+            try {
+                if (force) {
+                    this.logger.log('Force option enabled, clearing existing data...');
+                    await queryRunner.query('TRUNCATE TABLE post_tags CASCADE');
+                    await queryRunner.query('TRUNCATE TABLE tags CASCADE');
+                    await queryRunner.query('TRUNCATE TABLE topics CASCADE');
+                }
+                else {
+                    const tagCount = await this.tagRepository.count();
+                    if (tagCount > 0) {
+                        this.logger.log('Database already seeded. Use force=true to reseed.');
+                        return;
+                    }
+                }
+                await this.seedTags(queryRunner);
+                await this.seedTopics(queryRunner);
+                await queryRunner.commitTransaction();
+                this.logger.log('Database seeded successfully!');
+            }
+            catch (err) {
+                await queryRunner.rollbackTransaction();
+                this.logger.error('Error seeding database:', err);
+                throw err;
+            }
+            finally {
+                await queryRunner.release();
+            }
         }
-        catch (err) {
-            await queryRunner.rollbackTransaction();
-            throw err;
+        catch (error) {
+            this.logger.error('Failed to seed database:', error);
+            throw error;
         }
-        finally {
-            await queryRunner.release();
-        }
+    }
+    async seedTags(queryRunner) {
+        this.logger.log('Seeding tags...');
         const trendingTags = [
             { name: 'discussion', description: 'General discussions on any topic' },
             { name: 'askreddit', description: 'Ask the community anything' },
@@ -101,16 +111,69 @@ let SeedService = class SeedService {
             { name: 'soccer', description: 'Football/soccer' },
             { name: 'nba', description: 'NBA basketball' },
             { name: 'nfl', description: 'NFL football' },
-            { name: 'formula1', description: 'Formula 1 racing' }
+            { name: 'formula1', description: 'Formula 1 racing' },
+            { name: 'cricket', description: 'Cricket' },
+            { name: 'tennis', description: 'Tennis' },
+            { name: 'golf', description: 'Golf' },
+            { name: 'olympics', description: 'Olympic Games' },
+            { name: 'anime', description: 'Japanese animation' },
+            { name: 'manga', description: 'Japanese comics' },
+            { name: 'cosplay', description: 'Costume play' },
+            { name: 'animefigures', description: 'Anime figures and collectibles' },
+            { name: 'animewallpaper', description: 'Anime wallpapers' },
+            { name: 'animememes', description: 'Anime memes' },
+            { name: 'nsfw', description: 'Not Safe For Work content' },
+            { name: 'nsfwanime', description: 'NSFW Anime content' },
+            { name: 'ecchi', description: 'Ecchi anime/manga' },
+            { name: 'hentai', description: 'Hentai content' },
+            { name: 'rule34', description: 'Rule 34 content' },
+            { name: 'memes', description: 'Internet memes' },
+            { name: 'dankmemes', description: 'Dank memes' },
+            { name: 'wholesomememes', description: 'Wholesome memes' },
+            { name: 'me_irl', description: 'Me in real life' },
+            { name: 'funny', description: 'Funny content' },
+            { name: 'programming', description: 'Computer programming' },
+            { name: 'gaming', description: 'Video games' },
+            { name: 'pcgaming', description: 'PC gaming' },
+            { name: 'ps5', description: 'PlayStation 5' },
+            { name: 'xbox', description: 'Xbox gaming' },
+            { name: 'nintendoswitch', description: 'Nintendo Switch' },
+            { name: 'minecraft', description: 'Minecraft' },
+            { name: 'movies', description: 'Films and cinema' },
+            { name: 'television', description: 'TV shows' },
+            { name: 'netflix', description: 'Netflix shows' },
+            { name: 'marvel', description: 'Marvel Cinematic Universe' },
+            { name: 'startrek', description: 'Star Trek' },
+            { name: 'starwars', description: 'Star Wars' },
+            { name: 'askreddit', description: 'Ask Reddit' },
+            { name: 'todayilearned', description: 'Today I Learned' },
+            { name: 'explainlikeimfive', description: 'Explain Like I\'m Five' },
+            { name: 'showerthoughts', description: 'Shower thoughts' },
+            { name: 'lifeprotips', description: 'Life Pro Tips' },
+            { name: 'unpopularopinion', description: 'Unpopular opinions' },
+            { name: 'changemyview', description: 'Change My View' },
+            { name: 'amitheasshole', description: 'Am I The Asshole' }
         ];
-        const tags = this.tagRepository.create(trendingTags.map(tag => ({
-            ...tag,
-            usageCount: 0,
-        })));
-        await this.tagRepository.save(tags);
-        console.log('Seeded tags successfully');
+        const batchSize = 100;
+        for (let i = 0; i < trendingTags.length; i += batchSize) {
+            const batch = trendingTags.slice(i, i + batchSize);
+            await queryRunner.manager
+                .createQueryBuilder()
+                .insert()
+                .into(tag_entity_1.Tag)
+                .values(batch.map(tag => ({
+                ...tag,
+                usageCount: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            })))
+                .orIgnore()
+                .execute();
+        }
+        this.logger.log(`Seeded ${trendingTags.length} tags successfully`);
     }
-    async seedTopics() {
+    async seedTopics(queryRunner) {
+        this.logger.log('Seeding topics...');
         const trendingTopics = [
             { name: 'AskReddit', description: 'Ask and answer thought-provoking questions' },
             { name: 'Today I Learned', description: 'Share interesting tidbits' },
@@ -173,20 +236,32 @@ let SeedService = class SeedService {
             { name: 'Confession', description: 'Anonymous confessions' },
             { name: 'Rant', description: 'Vent frustrations' }
         ];
-        const topics = this.topicRepository.create(trendingTopics.map(topic => ({
-            ...topic,
-            usageCount: Math.floor(Math.random() * 5000) + 1000,
-        })));
-        await this.topicRepository.save(topics);
-        console.log('Seeded topics successfully');
+        const batchSize = 100;
+        for (let i = 0; i < trendingTopics.length; i += batchSize) {
+            const batch = trendingTopics.slice(i, i + batchSize);
+            await queryRunner.manager
+                .createQueryBuilder()
+                .insert()
+                .into(topic_entity_1.Topic)
+                .values(batch.map(topic => ({
+                ...topic,
+                usageCount: Math.floor(Math.random() * 5000) + 1000,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            })))
+                .orIgnore()
+                .execute();
+        }
+        this.logger.log(`Seeded ${trendingTopics.length} topics successfully`);
     }
 };
 exports.SeedService = SeedService;
-exports.SeedService = SeedService = __decorate([
+exports.SeedService = SeedService = SeedService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(tag_entity_1.Tag)),
     __param(1, (0, typeorm_1.InjectRepository)(topic_entity_1.Topic)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
-        typeorm_2.Repository])
+        typeorm_2.Repository,
+        typeorm_2.DataSource])
 ], SeedService);
 //# sourceMappingURL=seed.service.js.map

@@ -74,6 +74,18 @@ let TagsService = class TagsService {
             .whereInIds(tagIds)
             .execute();
     }
+    async searchTags(query, limit = 10) {
+        if (!query || query.trim() === '') {
+            return this.getPopularTags(limit);
+        }
+        const searchQuery = `%${query.toLowerCase().trim()}%`;
+        return this.tagRepository
+            .createQueryBuilder('tag')
+            .where('LOWER(tag.name) LIKE :query', { query: searchQuery })
+            .orderBy('tag.usageCount', 'DESC')
+            .take(limit)
+            .getMany();
+    }
 };
 exports.TagsService = TagsService;
 exports.TagsService = TagsService = __decorate([

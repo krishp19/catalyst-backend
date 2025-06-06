@@ -4,5 +4,5 @@ export declare class TagsController {
     private readonly tagsService;
     constructor(tagsService: TagsService);
     getPopularTags(limit?: number): Promise<Tag[]>;
-    searchTags(query: string): Promise<Tag[]>;
+    searchTags(query: string, limit?: number): Promise<Tag[]>;
 }

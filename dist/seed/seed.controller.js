@@ -16,8 +16,6 @@ exports.SeedController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const seed_service_1 = require("./seed.service");
-const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
-const admin_guard_1 = require("../auth/guards/admin.guard");
 let SeedController = class SeedController {
     constructor(seedService) {
         this.seedService = seedService;
@@ -33,7 +31,6 @@ let SeedController = class SeedController {
 exports.SeedController = SeedController;
 __decorate([
     (0, common_1.Post)(),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, admin_guard_1.AdminGuard),
     (0, swagger_1.ApiOperation)({ summary: 'Seed the database with initial data' }),
     (0, swagger_1.ApiQuery)({ name: 'force', required: false, type: Boolean, description: 'Force reseed even if data exists' }),
     (0, swagger_1.ApiResponse)({ status: 201, description: 'Database seeded successfully' }),

@@ -22,9 +22,14 @@ export class TagsController {
   @ApiOperation({ summary: 'Search tags by name' })
   @ApiResponse({ status: 200, description: 'Returns list of matching tags', type: [Tag] })
   @ApiQuery({ name: 'query', required: true, description: 'Search query for tag names' })
-  async searchTags(@Query('query') query: string): Promise<Tag[]> {
-    // In a real implementation, you would add search logic here
-    // This is a simplified version that just returns popular tags for now
-    return this.tagsService.getPopularTags(10);
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Maximum number of tags to return (default: 10)' })
+  async searchTags(
+    @Query('query') query: string,
+    @Query('limit') limit = 10
+  ): Promise<Tag[]> {
+    if (!query || query.trim() === '') {
+      return this.tagsService.getPopularTags(limit);
+    }
+    return this.tagsService.searchTags(query, limit);
   }
 }

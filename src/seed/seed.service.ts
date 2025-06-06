@@ -1,56 +1,70 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Tag } from '../tags/entities/tag.entity';
 import { Topic } from '../topics/entities/topic.entity';
 
 @Injectable()
 export class SeedService implements OnModuleInit {
+  private readonly logger = new Logger(SeedService.name);
+
   constructor(
     @InjectRepository(Tag)
     private readonly tagRepository: Repository<Tag>,
     @InjectRepository(Topic)
     private readonly topicRepository: Repository<Topic>,
+    private dataSource: DataSource,
   ) {}
 
   async onModuleInit(force: boolean = false) {
-    const tagCount = await this.tagRepository.count();
-    const topicCount = await this.topicRepository.count();
+    try {
+      this.logger.log('Starting database seeding...');
+      
+      // Start a transaction
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
 
-    if (tagCount === 0 || force) {
-      if (force) {
-        await this.tagRepository.clear();
-      }
-      await this.seedTags();
-    }
+      try {
+        // Clear existing data if force is true
+        if (force) {
+          this.logger.log('Force option enabled, clearing existing data...');
+          await queryRunner.query('TRUNCATE TABLE post_tags CASCADE');
+          await queryRunner.query('TRUNCATE TABLE tags CASCADE');
+          await queryRunner.query('TRUNCATE TABLE topics CASCADE');
+        } else {
+          // Check if we already have data
+          const tagCount = await this.tagRepository.count();
+          if (tagCount > 0) {
+            this.logger.log('Database already seeded. Use force=true to reseed.');
+            return;
+          }
+        }
 
-    if (topicCount === 0 || force) {
-      if (force) {
-        await this.topicRepository.clear();
+        // Seed the database
+        await this.seedTags(queryRunner);
+        await this.seedTopics(queryRunner);
+        
+        // Commit transaction
+        await queryRunner.commitTransaction();
+        this.logger.log('Database seeded successfully!');
+      } catch (err) {
+        // Rollback transaction on error
+        await queryRunner.rollbackTransaction();
+        this.logger.error('Error seeding database:', err);
+        throw err;
+      } finally {
+        // Release the query runner
+        await queryRunner.release();
       }
-      await this.seedTopics();
+    } catch (error) {
+      this.logger.error('Failed to seed database:', error);
+      throw error;
     }
   }
 
-  private async seedTags() {
-    const queryRunner = this.tagRepository.manager.connection.createQueryRunner();
-    
-    try {
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
-      
-      await queryRunner.query('ALTER TABLE post_tags DISABLE TRIGGER ALL');
-      await queryRunner.query('TRUNCATE TABLE post_tags CASCADE');
-      await queryRunner.query('TRUNCATE TABLE tags CASCADE');
-      await queryRunner.query('ALTER TABLE post_tags ENABLE TRIGGER ALL');
-      
-      await queryRunner.commitTransaction();
-    } catch (err) {
-      await queryRunner.rollbackTransaction();
-      throw err;
-    } finally {
-      await queryRunner.release();
-    }
+  private async seedTags(queryRunner: any) {
+    this.logger.log('Seeding tags...');
     
     const trendingTags = [
       // General
@@ -113,21 +127,88 @@ export class SeedService implements OnModuleInit {
       { name: 'soccer', description: 'Football/soccer' },
       { name: 'nba', description: 'NBA basketball' },
       { name: 'nfl', description: 'NFL football' },
-      { name: 'formula1', description: 'Formula 1 racing' }
+      { name: 'formula1', description: 'Formula 1 racing' },
+      { name: 'cricket', description: 'Cricket' },
+      { name: 'tennis', description: 'Tennis' },
+      { name: 'golf', description: 'Golf' },
+      { name: 'olympics', description: 'Olympic Games' },
+      
+      // Anime & Manga
+      { name: 'anime', description: 'Japanese animation' },
+      { name: 'manga', description: 'Japanese comics' },
+      { name: 'cosplay', description: 'Costume play' },
+      { name: 'animefigures', description: 'Anime figures and collectibles' },
+      { name: 'animewallpaper', description: 'Anime wallpapers' },
+      { name: 'animememes', description: 'Anime memes' },
+      
+      // NSFW Categories
+      { name: 'nsfw', description: 'Not Safe For Work content' },
+      { name: 'nsfwanime', description: 'NSFW Anime content' },
+      { name: 'ecchi', description: 'Ecchi anime/manga' },
+      { name: 'hentai', description: 'Hentai content' },
+      { name: 'rule34', description: 'Rule 34 content' },
+      
+      // Memes & Humor
+      { name: 'memes', description: 'Internet memes' },
+      { name: 'dankmemes', description: 'Dank memes' },
+      { name: 'wholesomememes', description: 'Wholesome memes' },
+      { name: 'me_irl', description: 'Me in real life' },
+      { name: 'funny', description: 'Funny content' },
+      
+      // Technology & Gaming
+      { name: 'programming', description: 'Computer programming' },
+      { name: 'gaming', description: 'Video games' },
+      { name: 'pcgaming', description: 'PC gaming' },
+      { name: 'ps5', description: 'PlayStation 5' },
+      { name: 'xbox', description: 'Xbox gaming' },
+      { name: 'nintendoswitch', description: 'Nintendo Switch' },
+      { name: 'minecraft', description: 'Minecraft' },
+      
+      // Entertainment
+      { name: 'movies', description: 'Films and cinema' },
+      { name: 'television', description: 'TV shows' },
+      { name: 'netflix', description: 'Netflix shows' },
+      { name: 'marvel', description: 'Marvel Cinematic Universe' },
+      { name: 'startrek', description: 'Star Trek' },
+      { name: 'starwars', description: 'Star Wars' },
+      
+      // Other Popular Categories
+      { name: 'askreddit', description: 'Ask Reddit' },
+      { name: 'todayilearned', description: 'Today I Learned' },
+      { name: 'explainlikeimfive', description: 'Explain Like I\'m Five' },
+      { name: 'showerthoughts', description: 'Shower thoughts' },
+      { name: 'lifeprotips', description: 'Life Pro Tips' },
+      { name: 'unpopularopinion', description: 'Unpopular opinions' },
+      { name: 'changemyview', description: 'Change My View' },
+      { name: 'amitheasshole', description: 'Am I The Asshole' }
     ];
 
-    const tags = this.tagRepository.create(
-      trendingTags.map(tag => ({
-        ...tag,
-        usageCount: 0, // Set usage count to 0 for all tags
-      })),
-    );
-
-    await this.tagRepository.save(tags);
-    console.log('Seeded tags successfully');
+    // Insert tags in batches to avoid parameter limits
+    const batchSize = 100;
+    for (let i = 0; i < trendingTags.length; i += batchSize) {
+      const batch = trendingTags.slice(i, i + batchSize);
+      await queryRunner.manager
+        .createQueryBuilder()
+        .insert()
+        .into(Tag)
+        .values(
+          batch.map(tag => ({
+            ...tag,
+            usageCount: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }))
+        )
+        .orIgnore() // Skip duplicates
+        .execute();
+    }
+    
+    this.logger.log(`Seeded ${trendingTags.length} tags successfully`);
   }
 
-  private async seedTopics() {
+  private async seedTopics(queryRunner: any) {
+    this.logger.log('Seeding topics...');
+    
     const trendingTopics = [
       // General Interest
       { name: 'AskReddit', description: 'Ask and answer thought-provoking questions' },
@@ -210,14 +291,26 @@ export class SeedService implements OnModuleInit {
       { name: 'Rant', description: 'Vent frustrations' }
     ];
 
-    const topics = this.topicRepository.create(
-      trendingTopics.map(topic => ({
-        ...topic,
-        usageCount: Math.floor(Math.random() * 5000) + 1000,
-      })),
-    );
-
-    await this.topicRepository.save(topics);
-    console.log('Seeded topics successfully');
+    // Insert topics in batches to avoid parameter limits
+    const batchSize = 100;
+    for (let i = 0; i < trendingTopics.length; i += batchSize) {
+      const batch = trendingTopics.slice(i, i + batchSize);
+      await queryRunner.manager
+        .createQueryBuilder()
+        .insert()
+        .into(Topic)
+        .values(
+          batch.map(topic => ({
+            ...topic,
+            usageCount: Math.floor(Math.random() * 5000) + 1000,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }))
+        )
+        .orIgnore() // Skip duplicates
+        .execute();
+    }
+    
+    this.logger.log(`Seeded ${trendingTopics.length} topics successfully`);
   }
 }
