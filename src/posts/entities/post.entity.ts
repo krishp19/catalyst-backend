@@ -6,12 +6,15 @@ import {
   UpdateDateColumn,
   ManyToOne,
   OneToMany,
+  ManyToMany,
   JoinColumn,
+  JoinTable,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Community } from '../../communities/entities/community.entity';
 import { Comment } from '../../comments/entities/comment.entity';
 import { Vote } from '../../votes/entities/vote.entity';
+import { Tag } from '../../tags/entities/tag.entity';
 
 export enum PostType {
   TEXT = 'text',
@@ -77,6 +80,14 @@ export class Post {
 
   @OneToMany(() => Vote, (vote) => vote.post)
   votes: Vote[];
+
+  @ManyToMany(() => Tag, tag => tag.posts)
+  @JoinTable({
+    name: 'post_tags',
+    joinColumn: { name: 'postId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'tagId', referencedColumnName: 'id' },
+  })
+  tags: Tag[];
 
   @CreateDateColumn()
   createdAt: Date;

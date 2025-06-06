@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, MaxLength, MinLength, Matches } from 'class-validator';
+import { IsNotEmpty, IsString, MaxLength, MinLength, Matches, IsArray, IsOptional, IsUUID } from 'class-validator';
 
 export class CreateCommunityDto {
   @ApiProperty({
@@ -39,5 +39,17 @@ export class CreateCommunityDto {
     required: false,
   })
   @IsString()
+  @IsOptional()
   iconUrl?: string;
+
+  @ApiProperty({
+    description: 'Array of topic IDs to associate with the community',
+    example: ['550e8400-e29b-41d4-a716-446655440000'],
+    required: false,
+    type: [String],
+  })
+  @IsArray()
+  @IsUUID(4, { each: true })
+  @IsOptional()
+  topicIds?: string[];
 }

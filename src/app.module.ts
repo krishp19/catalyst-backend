@@ -9,6 +9,7 @@ import { CommentsModule } from './comments/comments.module';
 import { VotesModule } from './votes/votes.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ReputationModule } from './reputation/reputation.module';
+import { SeedModule } from './seed/seed.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { ReputationModule } from './reputation/reputation.module';
     VotesModule,
     NotificationsModule,
     ReputationModule,
+    SeedModule,
   ],
 })
 export class AppModule {}

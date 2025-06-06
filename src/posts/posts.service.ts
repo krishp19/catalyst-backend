@@ -9,15 +9,16 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Post, PostType } from './entities/post.entity';
+import { UpdatePostDto } from './dto/update-post.dto';
 import { Vote } from '../votes/entities/vote.entity';
 import { CreatePostDto } from './dto/create-post.dto';
-import { UpdatePostDto } from './dto/update-post.dto';
 import { User } from '../users/entities/user.entity';
 import { CommunitiesService } from '../communities/communities.service';
 import { ReputationService } from '../reputation/reputation.service';
 import { MemberRole } from '../communities/entities/community-member.entity';
 import { NotificationType } from '../notifications/entities/notification.entity';
 import { NotificationsService } from '../notifications/notifications.service';
+import { TagsService } from '../tags/tags.service';
 
 @Injectable()
 export class PostsService {
@@ -29,6 +30,7 @@ export class PostsService {
     private votesRepository: Repository<Vote>,
     
     private communitiesService: CommunitiesService,
+    private tagsService: TagsService,
     @Inject(forwardRef(() => ReputationService))
     private reputationService: ReputationService,
     @Inject(forwardRef(() => NotificationsService))
@@ -50,13 +52,25 @@ export class PostsService {
     this.validatePostData(createPostDto);
     
     // Create post
+    // Create or get tags if provided
+    let tags = [];
+    if (createPostDto.tags && createPostDto.tags.length > 0) {
+      tags = await this.tagsService.createTags(createPostDto.tags);
+    }
+
     const post = this.postsRepository.create({
       ...createPostDto,
       author: user,
-      authorId: user.id,
+      community: { id: createPostDto.communityId },
+      tags,
     });
-    
+
     const savedPost = await this.postsRepository.save(post);
+    
+    // Update tag usage counts
+    if (tags.length > 0) {
+      await this.tagsService.incrementTagUsage(tags.map(tag => tag.id));
+    }
     
     // Add reputation for creating a post
     await this.reputationService.addPostCreationPoints(user.id);
@@ -193,14 +207,55 @@ export class PostsService {
   }
 
   async update(id: string, updatePostDto: UpdatePostDto, user: User): Promise<Post> {
-    const post = await this.findOne(id);
-    
-    // Verify ownership
-    if (post.authorId !== user.id) {
-      const userRole = await this.communitiesService.getMemberRole(post.communityId, user.id);
-      if (userRole !== MemberRole.ADMIN && userRole !== MemberRole.MODERATOR) {
-        throw new ForbiddenException('You can only edit your own posts');
+    const post = await this.postsRepository.findOne({ 
+      where: { id },
+      relations: ['author', 'community', 'tags']
+    });
+
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    if (post.author.id !== user.id) {
+      throw new ForbiddenException('You can only update your own posts');
+    }
+
+    // Validate post data based on type if type is being updated
+    if ('type' in updatePostDto) {
+      this.validatePostData({ ...post, ...updatePostDto } as CreatePostDto);
+    }
+
+    // Handle tags update if provided
+    if (updatePostDto.tags) {
+      // Get current tag IDs for comparison
+      const currentTagIds = post.tags?.map(tag => tag.id) || [];
+      
+      // Create or get new tags
+      const newTags = updatePostDto.tags.length > 0 
+        ? await this.tagsService.createTags(updatePostDto.tags)
+        : [];
+      
+      const newTagIds = newTags.map(tag => tag.id);
+      
+      // Update tag usage counts
+      const tagsToIncrement = newTagIds.filter(id => !currentTagIds.includes(id));
+      const tagsToDecrement = currentTagIds.filter(id => !newTagIds.includes(id));
+      
+      if (tagsToIncrement.length > 0) {
+        await this.tagsService.incrementTagUsage(tagsToIncrement);
       }
+      
+      if (tagsToDecrement.length > 0) {
+        await this.tagsService.decrementTagUsage(tagsToDecrement);
+      }
+      
+      post.tags = newTags;
+      
+      // Remove tags from updateDto to prevent overriding the relation
+      const { tags, ...restUpdateDto } = updatePostDto;
+      Object.assign(post, restUpdateDto);
+    } else {
+      Object.assign(post, updatePostDto);
     }
     
     // Update post
@@ -212,7 +267,7 @@ export class PostsService {
     const post = await this.findOne(id);
     
     // Verify ownership or admin/moderator status
-    if (post.authorId !== user.id) {
+    if (post.author.id !== user.id) {
       const userRole = await this.communitiesService.getMemberRole(post.communityId, user.id);
       if (userRole !== MemberRole.ADMIN && userRole !== MemberRole.MODERATOR) {
         throw new ForbiddenException('You can only delete your own posts');
@@ -232,8 +287,9 @@ export class PostsService {
       throw new ForbiddenException('You must be a member of the community to vote');
     }
     
-    // Check if user is trying to vote on their own post
-    if (post.authorId === user.id) {
+    // Check if user is the author or a community admin/moderator
+    const isAuthor = post.author.id === user.id;
+    if (isAuthor) {
       throw new ForbiddenException('You cannot vote on your own post');
     }
     

@@ -7,7 +7,11 @@ import {
   IsOptional,
   MaxLength,
   ValidateIf,
+  IsArray,
+  ArrayMaxSize,
+  ArrayMinSize,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { PostType } from '../entities/post.entity';
 
 export class CreatePostDto {
@@ -62,4 +66,22 @@ export class CreatePostDto {
   @IsNotEmpty()
   @IsString()
   communityId: string;
+
+  @ApiProperty({
+    description: 'Array of tags for the post (max 5)',
+    example: ['react', 'performance', 'frontend'],
+    required: false,
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(5, { message: 'You can add up to 5 tags' })
+  @ArrayMinSize(1, { message: 'At least one tag is required' })
+  @IsString({ each: true })
+  @Transform(({ value }) => 
+    Array.isArray(value) 
+      ? value.map(v => typeof v === 'string' ? v.trim().toLowerCase() : v)
+      : value
+  )
+  tags?: string[];
 }
