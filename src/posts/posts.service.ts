@@ -101,6 +101,7 @@ export class PostsService {
       .createQueryBuilder('post')
       .leftJoinAndSelect('post.author', 'author')
       .leftJoinAndSelect('post.community', 'community')
+      .leftJoinAndSelect('post.tags', 'tags')
       .where('post.communityId IN (:...communityIds)', { communityIds })
       .skip((page - 1) * limit)
       .take(limit);
@@ -145,6 +146,9 @@ export class PostsService {
       .createQueryBuilder('post')
       .leftJoinAndSelect('post.author', 'author')
       .leftJoinAndSelect('post.community', 'community')
+      .leftJoinAndSelect('post.votes', 'votes')
+      .leftJoinAndSelect('post.comments', 'comments')
+      .leftJoinAndSelect('post.tags', 'tags')
       .skip((page - 1) * limit)
       .take(limit);
     
@@ -196,7 +200,14 @@ export class PostsService {
   async findOne(id: string): Promise<Post> {
     const post = await this.postsRepository.findOne({
       where: { id },
-      relations: ['author', 'community'],
+      relations: [
+        'author',
+        'community',
+        'votes',
+        'comments',
+        'tags',
+        'tags',
+      ],
     });
     
     if (!post) {
