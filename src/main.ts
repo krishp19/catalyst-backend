@@ -8,14 +8,7 @@ async function bootstrap() {
   
   // Enable CORS with specific origins and credentials
   app.enableCors({
-    origin: [
-      'http://localhost:3001', // Default Next.js dev server
-      'https://catalyst-backend-i8ex.onrender.com', // Common alternate port
-      'http://localhost:3000',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:3001',
-      'https://catalyst-mocha.vercel.app'
-    ],
+    origin: true, // Reflects the request origin (if it's allowed)
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
     allowedHeaders: 'Content-Type, Accept, Authorization',
