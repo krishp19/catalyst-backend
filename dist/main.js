@@ -8,8 +8,9 @@ async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.enableCors({
         origin: [
-            'http://localhost:3000',
+            'http://localhost:3001',
             'https://catalyst-backend-i8ex.onrender.com',
+            'http://localhost:3000',
             'http://127.0.0.1:3000',
             'http://127.0.0.1:3001',
             'https://catalyst-mocha.vercel.app'
