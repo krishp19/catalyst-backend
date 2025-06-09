@@ -12,6 +12,7 @@ async function bootstrap() {
             'https://catalyst-backend-i8ex.onrender.com',
             'http://127.0.0.1:3000',
             'http://127.0.0.1:3001',
+            'https://catalyst-mocha.vercel.app'
         ],
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
         credentials: true,
