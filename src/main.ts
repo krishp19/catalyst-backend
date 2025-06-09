@@ -10,7 +10,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       'http://localhost:3000', // Default Next.js dev server
-      'http://localhost:3001', // Common alternate port
+      'https://catalyst-backend-i8ex.onrender.com', // Common alternate port
       'http://127.0.0.1:3000',
       'http://127.0.0.1:3001',
     ],
