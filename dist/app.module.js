@@ -34,14 +34,16 @@ exports.AppModule = AppModule = __decorate([
                 inject: [config_1.ConfigService],
                 useFactory: (configService) => ({
                     type: 'postgres',
-                    host: configService.get('DB_HOST'),
-                    port: configService.get('DB_PORT'),
-                    username: configService.get('DB_USERNAME'),
-                    password: configService.get('DB_PASSWORD'),
-                    database: configService.get('DB_DATABASE'),
+                    url: configService.get('DB_URL'),
                     entities: [__dirname + '/**/*.entity{.ts,.js}'],
                     synchronize: configService.get('NODE_ENV', 'development') !== 'production',
                     logging: configService.get('NODE_ENV', 'development') !== 'production',
+                    ssl: true,
+                    extra: {
+                        ssl: {
+                            rejectUnauthorized: false
+                        }
+                    }
                 }),
             }),
             auth_module_1.AuthModule,

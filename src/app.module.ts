@@ -22,14 +22,16 @@ import { SeedModule } from './seed/seed.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        host: configService.get('DB_HOST'),
-        port: configService.get<number>('DB_PORT'),
-        username: configService.get('DB_USERNAME'),
-        password: configService.get('DB_PASSWORD'),
-        database: configService.get('DB_DATABASE'),
+        url: configService.get('DB_URL'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: configService.get<string>('NODE_ENV', 'development') !== 'production',
         logging: configService.get<string>('NODE_ENV', 'development') !== 'production',
+        ssl: true, // Enable SSL for production databases
+        extra: {
+          ssl: {
+            rejectUnauthorized: false // For self-signed certificates in production
+          }
+        }
       }),
     }),
     AuthModule,
