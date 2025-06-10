@@ -1,19 +1,13 @@
 import { NestFactory, Reflector } from '@nestjs/core';
-import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
+import { ValidationPipe, ClassSerializerInterceptor, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { json, urlencoded } from 'express';
+import { Request, Response, NextFunction } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
-  // Enable CORS with specific origins and credentials
-  app.enableCors({
-    origin: true, // Reflects the request origin (if it's allowed)
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
-    allowedHeaders: 'Content-Type, Accept, Authorization',
-  });
   
   // Set global prefix
   app.setGlobalPrefix('api');
@@ -100,18 +94,86 @@ async function bootstrap() {
     },
   };
 
-  // Add CORS headers for all routes
-  app.enableCors({
-    origin: '*',
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    allowedHeaders: 'Content-Type, Accept, Authorization',
-  });
+  // Configure CORS with more permissive settings
+  const corsOptions = {
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      // Allow all origins in development, you might want to restrict this in production
+      if (process.env.NODE_ENV !== 'production') {
+        return callback(null, true);
+      }
+      
+      // In production, you might want to check against a whitelist
+      const allowedOrigins = [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'https://your-production-domain.com',
+      ];
+      
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      return callback(new Error('Not allowed by CORS'));
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'X-Requested-With',
+      'X-Forwarded-For',
+      'X-Forwarded-Proto',
+      'X-Forwarded-Host',
+      'X-Forwarded-Port',
+      'X-Forwarded-Ssl',
+    ],
+    exposedHeaders: [
+      'Content-Range',
+      'X-Total-Count',
+      'Authorization',
+      'X-Request-Id',
+      'X-Response-Time'
+    ],
+    credentials: true,
+    maxAge: 86400, // 24 hours
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+  };
 
-  // Add CORS headers specifically for Swagger UI
-  app.use('/api/docs', (req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  // Enable CORS with the above options
+  app.enableCors(corsOptions);
+
+  // Add global middleware for CORS headers and preflight
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    // Set CORS headers for all responses
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Forwarded-For');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Expose-Headers', 'Content-Range, X-Total-Count, Authorization');
+    
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+      res.header('Access-Control-Max-Age', '86400');
+      return res.status(204).send();
+    }
+    
     next();
+  });
+  
+  // Log CORS errors
+  app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+    if (err.message === 'Not allowed by CORS') {
+      Logger.warn(`CORS blocked: ${req.method} ${req.originalUrl} from ${req.headers.origin}`, 'CORS');
+      return res.status(403).json({
+        statusCode: 403,
+        message: 'Not allowed by CORS',
+      });
+    }
+    next(err);
   });
 
   // Setup Swagger
