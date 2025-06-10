@@ -10,6 +10,7 @@ import { VotesModule } from './votes/votes.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ReputationModule } from './reputation/reputation.module';
 import { SeedModule } from './seed/seed.module';
+import { SearchModule } from './search/search.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { SeedModule } from './seed/seed.module';
     NotificationsModule,
     ReputationModule,
     SeedModule,
+    SearchModule,
   ],
 })
 export class AppModule {}

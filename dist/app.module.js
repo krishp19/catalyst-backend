@@ -19,6 +19,7 @@ const votes_module_1 = require("./votes/votes.module");
 const notifications_module_1 = require("./notifications/notifications.module");
 const reputation_module_1 = require("./reputation/reputation.module");
 const seed_module_1 = require("./seed/seed.module");
+const search_module_1 = require("./search/search.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -55,6 +56,7 @@ exports.AppModule = AppModule = __decorate([
             notifications_module_1.NotificationsModule,
             reputation_module_1.ReputationModule,
             seed_module_1.SeedModule,
+            search_module_1.SearchModule,
         ],
     })
 ], AppModule);
