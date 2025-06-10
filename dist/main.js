@@ -44,15 +44,24 @@ async function bootstrap() {
         .addTag('comments', 'Comment management endpoints')
         .addTag('votes', 'Voting endpoints')
         .addTag('communities', 'Community management endpoints')
-        .addServer('http://localhost:3000', 'Local Development Server')
+        .addServer('https://catalyst-backend-i8ex.onrender.com/api', 'Production Server')
+        .addServer('http://localhost:3000/api', 'Local Development Server')
         .build();
     const document = swagger_1.SwaggerModule.createDocument(app, config, {
         deepScanRoutes: true,
         ignoreGlobalPrefix: false,
     });
-    swagger_1.SwaggerModule.setup('api/docs', app, document, {
+    const swaggerOptions = {
         explorer: true,
+        useGlobalPrefix: true,
+        customSiteTitle: 'Reddit Clone API Documentation',
+        customCss: `
+      .topbar { background-color: #ff4500 !important; }
+      .swagger-ui .info .title { color: #ff4500; }
+      .scheme-container { display: none !important; } /* Hide server selection */
+    `,
         swaggerOptions: {
+            url: '/api/docs-json',
             persistAuthorization: true,
             docExpansion: 'none',
             filter: true,
@@ -60,13 +69,27 @@ async function bootstrap() {
             defaultModelsExpandDepth: -1,
             tagsSorter: 'alpha',
             operationsSorter: 'alpha',
+            validatorUrl: null,
+            supportedSubmitMethods: ['get', 'post', 'put', 'delete', 'patch'],
+            requestInterceptor: (req) => {
+                if (req.url && req.url.startsWith('http://') && process.env.NODE_ENV === 'production') {
+                    req.url = req.url.replace('http://', 'https://');
+                }
+                return req;
+            },
         },
-        customSiteTitle: 'Reddit Clone API Documentation',
-        customCss: `
-      .topbar { background-color: #ff4500 !important; }
-      .swagger-ui .info .title { color: #ff4500; }
-    `,
+    };
+    app.enableCors({
+        origin: '*',
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+        allowedHeaders: 'Content-Type, Accept, Authorization',
     });
+    app.use('/api/docs', (req, res, next) => {
+        res.header('Access-Control-Allow-Origin', '*');
+        res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+        next();
+    });
+    swagger_1.SwaggerModule.setup('api/docs', app, document, swaggerOptions);
     const port = process.env.PORT || 3000;
     await app.listen(port);
     console.log(`Application is running on: http://localhost:${port}`);
