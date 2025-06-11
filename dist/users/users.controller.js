@@ -24,14 +24,14 @@ let UsersController = class UsersController {
     constructor(usersService) {
         this.usersService = usersService;
     }
-    getProfile(user) {
-        return user;
+    async getProfile(user) {
+        return this.usersService.getEnhancedProfile(user.username);
     }
     update(user, updateUserDto) {
         return this.usersService.update(user.id, updateUserDto);
     }
-    findByUsername(username) {
-        return this.usersService.findByUsername(username);
+    async findByUsername(username, includeContent = 'true') {
+        return this.usersService.getEnhancedProfile(username, includeContent === 'true');
     }
     getReputationBreakdown(userId) {
         return this.usersService.getReputationBreakdown(userId);
@@ -43,14 +43,14 @@ let UsersController = class UsersController {
 exports.UsersController = UsersController;
 __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Get current user profile' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Return the current user profile' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Return the current user profile with posts, comments, and votes', type: user_entity_1.User }),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Get)('profile'),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [user_entity_1.User]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getProfile", null);
 __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Update current user profile' }),
@@ -67,13 +67,14 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Get a user by username' }),
     (0, swagger_1.ApiParam)({ name: 'username', description: 'Username of the user to retrieve' }),
-    (0, swagger_1.ApiResponse)({ status: 200, description: 'Return the user' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Return the user with posts, comments, and votes', type: user_entity_1.User }),
     (0, swagger_1.ApiResponse)({ status: 404, description: 'User not found' }),
     (0, common_1.Get)(':username'),
     __param(0, (0, common_1.Param)('username')),
+    __param(1, (0, common_1.Query)('includeContent')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
 ], UsersController.prototype, "findByUsername", null);
 __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Get reputation breakdown for a user' }),

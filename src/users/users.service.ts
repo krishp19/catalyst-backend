@@ -1,16 +1,26 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { User } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Community } from 'src/communities/entities/community.entity';
+import { Post } from 'src/posts/entities/post.entity';
+import { Comment } from 'src/comments/entities/comment.entity';
+import { Vote } from 'src/votes/entities/vote.entity';
+import { UserProfileDto } from './dto/user-profile.dto';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(Post)
+    private postsRepository: Repository<Post>,
+    @InjectRepository(Comment)
+    private commentsRepository: Repository<Comment>,
+    @InjectRepository(Vote)
+    private votesRepository: Repository<Vote>,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -95,6 +105,73 @@ export class UsersService {
     Object.assign(user, updateUserDto);
     
     return this.usersRepository.save(user);
+  }
+
+  async getEnhancedProfile(username: string, includeContent = true): Promise<UserProfileDto> {
+    const user = await this.usersRepository.findOne({
+      where: { username },
+      relations: ['posts', 'comments', 'votes']
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with username ${username} not found`);
+    }
+
+    const userProfile = new UserProfileDto(user);
+
+    if (!includeContent) {
+      return userProfile;
+    }
+
+    // Get user's posts with relations
+    const posts = await this.postsRepository.find({
+      where: { authorId: user.id },
+      relations: ['author', 'community', 'tags'],
+      order: { createdAt: 'DESC' },
+      take: 10
+    });
+
+    // Get user's comments with relations
+    const comments = await this.commentsRepository.find({
+      where: { authorId: user.id },
+      relations: ['author', 'post'],
+      order: { createdAt: 'DESC' },
+      take: 10
+    });
+
+    // Get user's votes with relations to posts and comments
+    const votes = await this.votesRepository.find({
+      where: { userId: user.id },
+      relations: ['post', 'comment', 'post.author', 'comment.author']
+    });
+
+    // Separate upvoted and downvoted content
+    const upvoted = [];
+    const downvoted = [];
+
+    for (const vote of votes) {
+      if (vote.value > 0) {
+        if (vote.post) {
+          upvoted.push(vote.post);
+        } else if (vote.comment) {
+          upvoted.push(vote.comment);
+        }
+      } else if (vote.value < 0) {
+        if (vote.post) {
+          downvoted.push(vote.post);
+        } else if (vote.comment) {
+          downvoted.push(vote.comment);
+        }
+      }
+    }
+
+    // Add the data to the profile
+    userProfile.posts = posts;
+    userProfile.comments = comments;
+    userProfile.upvoted = upvoted;
+    userProfile.downvoted = downvoted;
+
+    return userProfile;
   }
 
   async getReputationBreakdown(userId: string) {
