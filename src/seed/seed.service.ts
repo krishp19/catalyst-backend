@@ -147,6 +147,7 @@ export class SeedService implements OnModuleInit {
       { name: 'ecchi', description: 'Ecchi anime/manga' },
       { name: 'hentai', description: 'Hentai content' },
       { name: 'rule34', description: 'Rule 34 content' },
+      { name: 'gore', description: 'Gore content' },
       
       // Memes & Humor
       { name: 'memes', description: 'Internet memes' },

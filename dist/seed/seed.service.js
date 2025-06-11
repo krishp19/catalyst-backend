@@ -127,6 +127,7 @@ let SeedService = SeedService_1 = class SeedService {
             { name: 'ecchi', description: 'Ecchi anime/manga' },
             { name: 'hentai', description: 'Hentai content' },
             { name: 'rule34', description: 'Rule 34 content' },
+            { name: 'gore', description: 'Gore content' },
             { name: 'memes', description: 'Internet memes' },
             { name: 'dankmemes', description: 'Dank memes' },
             { name: 'wholesomememes', description: 'Wholesome memes' },

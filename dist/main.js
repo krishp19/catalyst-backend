@@ -55,7 +55,7 @@ async function bootstrap() {
       .scheme-container { display: none !important; } /* Hide server selection */
     `,
         swaggerOptions: {
-            url: '/api/docs-json',
+            url: '/docs-json',
             persistAuthorization: true,
             docExpansion: 'none',
             filter: true,
@@ -137,7 +137,7 @@ async function bootstrap() {
         }
         next(err);
     });
-    swagger_1.SwaggerModule.setup('api/docs', app, document, swaggerOptions);
+    swagger_1.SwaggerModule.setup('/docs', app, document, swaggerOptions);
     const port = process.env.PORT || 3000;
     await app.listen(port);
     console.log(`Application is running on: http://localhost:${port}`);

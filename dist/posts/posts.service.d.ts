@@ -37,6 +37,7 @@ export declare class PostsService {
             currentPage: number;
         };
     }>;
+    findMostPopular(limit?: number): Promise<Post[]>;
     findOne(id: string): Promise<Post>;
     update(id: string, updatePostDto: UpdatePostDto, user: User): Promise<Post>;
     remove(id: string, user: User): Promise<{

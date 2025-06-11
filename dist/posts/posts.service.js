@@ -156,6 +156,31 @@ let PostsService = class PostsService {
             throw new common_1.BadRequestException('Failed to fetch posts');
         }
     }
+    async findMostPopular(limit = 10) {
+        const popularPostIds = await this.postsRepository
+            .createQueryBuilder('post')
+            .select('post.id', 'id')
+            .addSelect('(SELECT COALESCE(SUM(CASE WHEN votes.value = 1 THEN 1 WHEN votes.value = -1 THEN -1 ELSE 0 END), 0) FROM votes WHERE votes."postId" = post.id)', 'voteScore')
+            .addSelect('(SELECT COUNT(*) FROM comments WHERE comments."postId" = post.id)', 'commentCount')
+            .orderBy('"voteScore"', 'DESC')
+            .addOrderBy('"commentCount"', 'DESC')
+            .take(limit)
+            .getRawMany();
+        if (popularPostIds.length === 0) {
+            return [];
+        }
+        const postIds = popularPostIds.map(item => item.id);
+        return this.postsRepository
+            .createQueryBuilder('post')
+            .leftJoinAndSelect('post.author', 'author')
+            .leftJoinAndSelect('post.community', 'community')
+            .leftJoinAndSelect('post.tags', 'tags')
+            .leftJoin('post.votes', 'votes')
+            .leftJoin('post.comments', 'comments')
+            .where('post.id IN (:...postIds)', { postIds })
+            .orderBy(`array_position(ARRAY[:...postIds]::uuid[], post.id)`, 'ASC')
+            .getMany();
+    }
     async findOne(id) {
         const post = await this.postsRepository.findOne({
             where: { id },

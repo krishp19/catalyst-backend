@@ -51,6 +51,25 @@ export class PostsController {
     );
   }
 
+  @Get('popular')
+  @ApiOperation({ summary: 'Get most popular posts' })
+  @ApiResponse({ status: 200, description: 'Return most popular posts based on votes and comments' })
+  async findMostPopular(
+    @Query('limit') limit?: number,
+  ) {
+    const posts = await this.postsService.findMostPopular(limit || 10);
+    return {
+      items: posts,
+      meta: {
+        totalItems: posts.length,
+        itemCount: posts.length,
+        itemsPerPage: limit || 10,
+        totalPages: 1,
+        currentPage: 1,
+      },
+    };
+  }
+
   @ApiOperation({ summary: 'Get posts from communities the user has joined' })
   @ApiResponse({ status: 200, description: 'Return posts from joined communities' })
   @ApiBearerAuth()

@@ -31,6 +31,19 @@ let PostsController = class PostsController {
     findAll(page, limit, sort, communityId) {
         return this.postsService.findAll(page || 1, limit || 10, sort || 'hot', communityId);
     }
+    async findMostPopular(limit) {
+        const posts = await this.postsService.findMostPopular(limit || 10);
+        return {
+            items: posts,
+            meta: {
+                totalItems: posts.length,
+                itemCount: posts.length,
+                itemsPerPage: limit || 10,
+                totalPages: 1,
+                currentPage: 1,
+            },
+        };
+    }
     findJoinedCommunitiesPosts(user, page, limit, sort) {
         return this.postsService.findPostsFromJoinedCommunities(user.id, page || 1, limit || 10, sort || 'hot');
     }
@@ -84,6 +97,15 @@ __decorate([
     __metadata("design:paramtypes", [Number, Number, String, String]),
     __metadata("design:returntype", void 0)
 ], PostsController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('popular'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get most popular posts' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Return most popular posts based on votes and comments' }),
+    __param(0, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], PostsController.prototype, "findMostPopular", null);
 __decorate([
     (0, swagger_1.ApiOperation)({ summary: 'Get posts from communities the user has joined' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Return posts from joined communities' }),

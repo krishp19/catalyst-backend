@@ -16,6 +16,16 @@ export declare class PostsController {
             currentPage: number;
         };
     }>;
+    findMostPopular(limit?: number): Promise<{
+        items: import("./entities/post.entity").Post[];
+        meta: {
+            totalItems: number;
+            itemCount: number;
+            itemsPerPage: number;
+            totalPages: number;
+            currentPage: number;
+        };
+    }>;
     findJoinedCommunitiesPosts(user: User, page?: number, limit?: number, sort?: string): Promise<{
         items: import("./entities/post.entity").Post[];
         meta: {

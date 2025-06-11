@@ -197,6 +197,40 @@ export class PostsService {
     }
   }
 
+  async findMostPopular(limit: number = 10): Promise<Post[]> {
+    // First, get the post IDs sorted by popularity
+    const popularPostIds = await this.postsRepository
+      .createQueryBuilder('post')
+      .select('post.id', 'id')
+      .addSelect('(SELECT COALESCE(SUM(CASE WHEN votes.value = 1 THEN 1 WHEN votes.value = -1 THEN -1 ELSE 0 END), 0) FROM votes WHERE votes."postId" = post.id)', 'voteScore')
+      .addSelect('(SELECT COUNT(*) FROM comments WHERE comments."postId" = post.id)', 'commentCount')
+      .orderBy('"voteScore"', 'DESC')
+      .addOrderBy('"commentCount"', 'DESC')
+      .take(limit)
+      .getRawMany();
+
+    // If no posts found, return empty array
+    if (popularPostIds.length === 0) {
+      return [];
+    }
+
+    // Extract the post IDs
+    const postIds = popularPostIds.map(item => item.id);
+
+    // Then fetch the full post data with relations
+    return this.postsRepository
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.author', 'author')
+      .leftJoinAndSelect('post.community', 'community')
+      .leftJoinAndSelect('post.tags', 'tags')
+      .leftJoin('post.votes', 'votes')
+      .leftJoin('post.comments', 'comments')
+      .where('post.id IN (:...postIds)', { postIds })
+      // Maintain the same order as the IDs we got from the first query
+      .orderBy(`array_position(ARRAY[:...postIds]::uuid[], post.id)`, 'ASC')
+      .getMany();
+  }
+
   async findOne(id: string): Promise<Post> {
     const post = await this.postsRepository.findOne({
       where: { id },

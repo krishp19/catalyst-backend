@@ -74,7 +74,7 @@ async function bootstrap() {
       .scheme-container { display: none !important; } /* Hide server selection */
     `,
     swaggerOptions: {
-      url: '/api/docs-json',
+      url: '/docs-json',
       persistAuthorization: true,
       docExpansion: 'none',
       filter: true,
@@ -177,7 +177,7 @@ async function bootstrap() {
   });
 
   // Setup Swagger
-  SwaggerModule.setup('api/docs', app, document, swaggerOptions);
+  SwaggerModule.setup('/docs', app, document, swaggerOptions);
   
   // Start the server
   const port = process.env.PORT || 3000;
