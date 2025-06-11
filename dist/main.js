@@ -38,8 +38,8 @@ async function bootstrap() {
         .addTag('comments', 'Comment management endpoints')
         .addTag('votes', 'Voting endpoints')
         .addTag('communities', 'Community management endpoints')
-        .addServer('https://catalyst-backend-i8ex.onrender.com/api', 'Production Server')
-        .addServer('http://localhost:3000/api', 'Local Development Server')
+        .addServer('https://catalyst-backend-i8ex.onrender.com', 'Production Server')
+        .addServer('http://localhost:3000', 'Local Development Server')
         .build();
     const document = swagger_1.SwaggerModule.createDocument(app, config, {
         deepScanRoutes: true,
