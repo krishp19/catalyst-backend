@@ -1,10 +1,14 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { ResendOtpDto } from './dto/resend-otp.dto';
 import { JwtPayload, TokenResponse } from '../common/interfaces';
+import { EmailService } from '../email/email.service';
+import { UpdateUserDto } from '../users/dto/update-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -12,11 +16,79 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private emailService: EmailService,
   ) {}
 
   async register(createUserDto: CreateUserDto) {
+    // Check if user with this email already exists
+    const existingUser = await this.usersService.findByEmail(createUserDto.email);
+    if (existingUser) {
+      throw new ConflictException('Email already registered');
+    }
+
+    // Create the user (isEmailVerified is false by default)
     const user = await this.usersService.create(createUserDto);
     
+    // Generate and save OTP
+    await this.sendOtpEmail(user.email);
+    
+    // Generate tokens (access only, refresh token will be given after email verification)
+    const accessToken = this.generateAccessToken({
+      sub: user.id,
+      username: user.username,
+    });
+    
+    return {
+      user,
+      accessToken,
+      message: 'Registration successful. Please check your email for the OTP to verify your account.',
+    };
+  }
+  
+  async sendOtpEmail(email: string): Promise<boolean> {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    
+    // Generate and save OTP
+    user.generateOtpCode();
+    const updateData: Partial<UpdateUserDto & { otpCode: string; otpExpires: Date }> = {
+      otpCode: user.otpCode,
+      otpExpires: user.otpExpires,
+    };
+    await this.usersService.update(user.id, updateData as UpdateUserDto);
+    
+    // Send OTP email
+    return this.emailService.sendOtpEmail(user.email, user.otpCode);
+  }
+  
+  async verifyOtp(verifyOtpDto: VerifyOtpDto) {
+    const { email, otp } = verifyOtpDto;
+    
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    
+    // Check if email is already verified
+    if (user.isEmailVerified) {
+      throw new BadRequestException('Email already verified');
+    }
+    
+    // Verify OTP
+    const isOtpValid = user.verifyOtpCode(otp);
+    if (!isOtpValid) {
+      throw new BadRequestException('Invalid or expired OTP');
+    }
+    
+    // Mark email as verified
+    user.isEmailVerified = true;
+    user.otpCode = null;
+    user.otpExpires = null;
+    await this.usersService.update(user.id, user);
+    
+    // Generate full tokens after successful verification
     const tokens = this.generateTokens({
       sub: user.id,
       username: user.username,
@@ -25,6 +97,36 @@ export class AuthService {
     return {
       user,
       ...tokens,
+      message: 'Email verified successfully',
+    };
+  }
+  
+  async resendOtp(resendOtpDto: ResendOtpDto) {
+    const { email } = resendOtpDto;
+    
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    
+    if (user.isEmailVerified) {
+      throw new BadRequestException('Email already verified');
+    }
+    
+    // Check if we need to wait before resending (rate limiting)
+    if (user.otpExpires && user.otpExpires > new Date()) {
+      const secondsLeft = Math.ceil((user.otpExpires.getTime() - Date.now()) / 1000);
+      throw new BadRequestException(
+        `Please wait ${secondsLeft} seconds before requesting a new OTP`
+      );
+    }
+    
+    // Send new OTP
+    await this.sendOtpEmail(email);
+    
+    return {
+      success: true,
+      message: 'New OTP sent to your email',
     };
   }
 
@@ -38,6 +140,11 @@ export class AuthService {
         user = await this.usersService.findByEmail(loginDto.usernameOrEmail);
       } else {
         user = await this.usersService.findByUsername(loginDto.usernameOrEmail);
+      }
+      
+      // Check if email is verified
+      if (!user.isEmailVerified) {
+        throw new UnauthorizedException('Please verify your email before logging in');
       }
       
       const isPasswordValid = await user.comparePassword(loginDto.password);
@@ -85,16 +192,24 @@ export class AuthService {
     return { message: 'Logged out successfully' };
   }
 
+  private generateAccessToken(payload: JwtPayload): string {
+    return this.jwtService.sign(payload, {
+      secret: this.configService.get<string>('JWT_SECRET'),
+      expiresIn: this.configService.get<string>('JWT_EXPIRATION', '1h'),
+    });
+  }
+
+  private generateRefreshToken(payload: JwtPayload): string {
+    return this.jwtService.sign(payload, {
+      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+      expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRATION', '7d'),
+    });
+  }
+
   private generateTokens(payload: JwtPayload): TokenResponse {
     return {
-      accessToken: this.jwtService.sign(payload, {
-        secret: this.configService.get<string>('JWT_SECRET'),
-        expiresIn: this.configService.get<string>('JWT_EXPIRATION', '1h'),
-      }),
-      refreshToken: this.jwtService.sign(payload, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRATION', '7d'),
-      }),
+      accessToken: this.generateAccessToken(payload),
+      refreshToken: this.generateRefreshToken(payload),
     };
   }
 }

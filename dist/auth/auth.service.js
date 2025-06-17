@@ -14,14 +14,61 @@ const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const config_1 = require("@nestjs/config");
 const users_service_1 = require("../users/users.service");
+const email_service_1 = require("../email/email.service");
 let AuthService = class AuthService {
-    constructor(usersService, jwtService, configService) {
+    constructor(usersService, jwtService, configService, emailService) {
         this.usersService = usersService;
         this.jwtService = jwtService;
         this.configService = configService;
+        this.emailService = emailService;
     }
     async register(createUserDto) {
+        const existingUser = await this.usersService.findByEmail(createUserDto.email);
+        if (existingUser) {
+            throw new common_1.ConflictException('Email already registered');
+        }
         const user = await this.usersService.create(createUserDto);
+        await this.sendOtpEmail(user.email);
+        const accessToken = this.generateAccessToken({
+            sub: user.id,
+            username: user.username,
+        });
+        return {
+            user,
+            accessToken,
+            message: 'Registration successful. Please check your email for the OTP to verify your account.',
+        };
+    }
+    async sendOtpEmail(email) {
+        const user = await this.usersService.findByEmail(email);
+        if (!user) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        user.generateOtpCode();
+        const updateData = {
+            otpCode: user.otpCode,
+            otpExpires: user.otpExpires,
+        };
+        await this.usersService.update(user.id, updateData);
+        return this.emailService.sendOtpEmail(user.email, user.otpCode);
+    }
+    async verifyOtp(verifyOtpDto) {
+        const { email, otp } = verifyOtpDto;
+        const user = await this.usersService.findByEmail(email);
+        if (!user) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        if (user.isEmailVerified) {
+            throw new common_1.BadRequestException('Email already verified');
+        }
+        const isOtpValid = user.verifyOtpCode(otp);
+        if (!isOtpValid) {
+            throw new common_1.BadRequestException('Invalid or expired OTP');
+        }
+        user.isEmailVerified = true;
+        user.otpCode = null;
+        user.otpExpires = null;
+        await this.usersService.update(user.id, user);
         const tokens = this.generateTokens({
             sub: user.id,
             username: user.username,
@@ -29,6 +76,26 @@ let AuthService = class AuthService {
         return {
             user,
             ...tokens,
+            message: 'Email verified successfully',
+        };
+    }
+    async resendOtp(resendOtpDto) {
+        const { email } = resendOtpDto;
+        const user = await this.usersService.findByEmail(email);
+        if (!user) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        if (user.isEmailVerified) {
+            throw new common_1.BadRequestException('Email already verified');
+        }
+        if (user.otpExpires && user.otpExpires > new Date()) {
+            const secondsLeft = Math.ceil((user.otpExpires.getTime() - Date.now()) / 1000);
+            throw new common_1.BadRequestException(`Please wait ${secondsLeft} seconds before requesting a new OTP`);
+        }
+        await this.sendOtpEmail(email);
+        return {
+            success: true,
+            message: 'New OTP sent to your email',
         };
     }
     async login(loginDto) {
@@ -40,6 +107,9 @@ let AuthService = class AuthService {
             }
             else {
                 user = await this.usersService.findByUsername(loginDto.usernameOrEmail);
+            }
+            if (!user.isEmailVerified) {
+                throw new common_1.UnauthorizedException('Please verify your email before logging in');
             }
             const isPasswordValid = await user.comparePassword(loginDto.password);
             if (!isPasswordValid) {
@@ -76,16 +146,22 @@ let AuthService = class AuthService {
     async logout(userId) {
         return { message: 'Logged out successfully' };
     }
+    generateAccessToken(payload) {
+        return this.jwtService.sign(payload, {
+            secret: this.configService.get('JWT_SECRET'),
+            expiresIn: this.configService.get('JWT_EXPIRATION', '1h'),
+        });
+    }
+    generateRefreshToken(payload) {
+        return this.jwtService.sign(payload, {
+            secret: this.configService.get('JWT_REFRESH_SECRET'),
+            expiresIn: this.configService.get('JWT_REFRESH_EXPIRATION', '7d'),
+        });
+    }
     generateTokens(payload) {
         return {
-            accessToken: this.jwtService.sign(payload, {
-                secret: this.configService.get('JWT_SECRET'),
-                expiresIn: this.configService.get('JWT_EXPIRATION', '1h'),
-            }),
-            refreshToken: this.jwtService.sign(payload, {
-                secret: this.configService.get('JWT_REFRESH_SECRET'),
-                expiresIn: this.configService.get('JWT_REFRESH_EXPIRATION', '7d'),
-            }),
+            accessToken: this.generateAccessToken(payload),
+            refreshToken: this.generateRefreshToken(payload),
         };
     }
 };
@@ -94,6 +170,7 @@ exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [users_service_1.UsersService,
         jwt_1.JwtService,
-        config_1.ConfigService])
+        config_1.ConfigService,
+        email_service_1.EmailService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

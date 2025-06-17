@@ -8,6 +8,9 @@ export declare class User {
     id: string;
     username: string;
     email: string;
+    isEmailVerified: boolean;
+    otpCode: string;
+    otpExpires: Date;
     password: string;
     bio: string;
     avatarUrl: string;
@@ -26,4 +29,6 @@ export declare class User {
     notifications: Notification[];
     hashPassword(): Promise<void>;
     comparePassword(attempt: string): Promise<boolean>;
+    generateOtpCode(): void;
+    verifyOtpCode(code: string): boolean;
 }

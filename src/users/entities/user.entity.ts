@@ -28,6 +28,17 @@ export class User {
   @Column({ unique: true })
   email: string;
 
+  @Column({ default: false })
+  isEmailVerified: boolean;
+
+  @Column({ nullable: true })
+  @Exclude({ toPlainOnly: true })
+  otpCode: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  @Exclude({ toPlainOnly: true })
+  otpExpires: Date;
+
   @Column()
   @Exclude({ toPlainOnly: true })
   password: string;
@@ -90,5 +101,19 @@ export class User {
 
   async comparePassword(attempt: string): Promise<boolean> {
     return bcrypt.compare(attempt, this.password);
+  }
+
+  // Generate OTP code and set expiration (10 minutes from now)
+  generateOtpCode(): void {
+    this.otpCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+    this.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
+  }
+
+  // Verify OTP code
+  verifyOtpCode(code: string): boolean {
+    if (!this.otpCode || !this.otpExpires) return false;
+    
+    const now = new Date();
+    return this.otpCode === code && now < this.otpExpires;
   }
 }

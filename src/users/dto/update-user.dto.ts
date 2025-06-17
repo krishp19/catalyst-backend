@@ -1,5 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsOptional, IsString, MinLength, Matches } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { 
+  IsEmail, 
+  IsOptional, 
+  IsString, 
+  MinLength, 
+  Matches, 
+  IsBoolean, 
+  IsDateString, 
+  Length 
+} from 'class-validator';
 
 export class UpdateUserDto {
   @ApiProperty({
@@ -41,4 +50,31 @@ export class UpdateUserDto {
     message: 'Password must contain at least 1 uppercase letter, 1 lowercase letter, and 1 number or special character',
   })
   password?: string;
+
+  @ApiPropertyOptional({
+    description: 'Whether the user\'s email is verified',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isEmailVerified?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'OTP code for email verification',
+    example: '123456',
+  })
+  @IsOptional()
+  @IsString()
+  @Length(6, 6, { message: 'OTP must be 6 digits' })
+  @Matches(/^\d+$/, { message: 'OTP must contain only numbers' })
+  otpCode?: string;
+
+  @ApiPropertyOptional({
+    description: 'Expiration date for the OTP code',
+    type: String,
+    format: 'date-time',
+  })
+  @IsOptional()
+  @IsDateString()
+  otpExpires?: Date;
 }

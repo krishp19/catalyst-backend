@@ -3,4 +3,7 @@ export declare class UpdateUserDto {
     avatarUrl?: string;
     email?: string;
     password?: string;
+    isEmailVerified?: boolean;
+    otpCode?: string;
+    otpExpires?: Date;
 }

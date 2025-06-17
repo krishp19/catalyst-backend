@@ -32,6 +32,16 @@ let User = class User {
     async comparePassword(attempt) {
         return bcrypt.compare(attempt, this.password);
     }
+    generateOtpCode() {
+        this.otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+        this.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+    }
+    verifyOtpCode(code) {
+        if (!this.otpCode || !this.otpExpires)
+            return false;
+        const now = new Date();
+        return this.otpCode === code && now < this.otpExpires;
+    }
 };
 exports.User = User;
 __decorate([
@@ -46,6 +56,20 @@ __decorate([
     (0, typeorm_1.Column)({ unique: true }),
     __metadata("design:type", String)
 ], User.prototype, "email", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ default: false }),
+    __metadata("design:type", Boolean)
+], User.prototype, "isEmailVerified", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    (0, class_transformer_1.Exclude)({ toPlainOnly: true }),
+    __metadata("design:type", String)
+], User.prototype, "otpCode", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: true }),
+    (0, class_transformer_1.Exclude)({ toPlainOnly: true }),
+    __metadata("design:type", Date)
+], User.prototype, "otpExpires", void 0);
 __decorate([
     (0, typeorm_1.Column)(),
     (0, class_transformer_1.Exclude)({ toPlainOnly: true }),

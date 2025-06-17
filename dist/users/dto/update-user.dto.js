@@ -59,4 +59,34 @@ __decorate([
     }),
     __metadata("design:type", String)
 ], UpdateUserDto.prototype, "password", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Whether the user\'s email is verified',
+        default: false,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], UpdateUserDto.prototype, "isEmailVerified", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'OTP code for email verification',
+        example: '123456',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Length)(6, 6, { message: 'OTP must be 6 digits' }),
+    (0, class_validator_1.Matches)(/^\d+$/, { message: 'OTP must contain only numbers' }),
+    __metadata("design:type", String)
+], UpdateUserDto.prototype, "otpCode", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Expiration date for the OTP code',
+        type: String,
+        format: 'date-time',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsDateString)(),
+    __metadata("design:type", Date)
+], UpdateUserDto.prototype, "otpExpires", void 0);
 //# sourceMappingURL=update-user.dto.js.map

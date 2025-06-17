@@ -78,11 +78,7 @@ let UsersService = class UsersService {
         return user;
     }
     async findByEmail(email) {
-        const user = await this.usersRepository.findOne({ where: { email } });
-        if (!user) {
-            throw new common_1.NotFoundException(`User with email ${email} not found`);
-        }
-        return user;
+        return this.usersRepository.findOne({ where: { email } });
     }
     async update(id, updateUserDto) {
         const user = await this.findById(id);

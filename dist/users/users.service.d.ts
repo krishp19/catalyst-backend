@@ -26,7 +26,7 @@ export declare class UsersService {
     }>;
     findById(id: string): Promise<User>;
     findByUsername(username: string): Promise<User>;
-    findByEmail(email: string): Promise<User>;
+    findByEmail(email: string): Promise<User | null>;
     update(id: string, updateUserDto: UpdateUserDto): Promise<User>;
     getEnhancedProfile(username: string, includeContent?: boolean): Promise<UserProfileDto>;
     getReputationBreakdown(userId: string): Promise<{
