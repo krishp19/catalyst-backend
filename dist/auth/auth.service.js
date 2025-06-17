@@ -60,10 +60,11 @@ let AuthService = class AuthService {
         if (!isOtpValid) {
             throw new common_1.BadRequestException('Invalid or expired OTP');
         }
-        user.isEmailVerified = true;
-        user.otpCode = null;
-        user.otpExpires = null;
-        await this.usersService.update(user.id, user);
+        await this.usersService.update(user.id, {
+            isEmailVerified: true,
+            otpCode: null,
+            otpExpires: null,
+        });
         return {
             user,
             message: 'Email verified successfully',
@@ -89,21 +90,24 @@ let AuthService = class AuthService {
         };
     }
     async login(loginDto) {
+        const isEmail = loginDto.usernameOrEmail.includes('@');
+        let user;
         try {
-            const isEmail = loginDto.usernameOrEmail.includes('@');
-            let user;
             if (isEmail) {
                 user = await this.usersService.findByEmail(loginDto.usernameOrEmail);
             }
             else {
                 user = await this.usersService.findByUsername(loginDto.usernameOrEmail);
             }
+            if (!user) {
+                throw new common_1.UnauthorizedException('No user found with the provided credentials');
+            }
             if (!user.isEmailVerified) {
                 throw new common_1.UnauthorizedException('Please verify your email before logging in');
             }
             const isPasswordValid = await user.comparePassword(loginDto.password);
             if (!isPasswordValid) {
-                throw new common_1.UnauthorizedException('Invalid credentials');
+                throw new common_1.UnauthorizedException('Invalid password');
             }
             const tokens = this.generateTokens({
                 sub: user.id,
@@ -115,7 +119,11 @@ let AuthService = class AuthService {
             };
         }
         catch (error) {
-            throw new common_1.UnauthorizedException('Invalid credentials');
+            if (error instanceof common_1.UnauthorizedException) {
+                throw error;
+            }
+            console.error('Login error:', error);
+            throw new common_1.UnauthorizedException('Login failed. Please try again.');
         }
     }
     async refreshToken(refreshToken) {

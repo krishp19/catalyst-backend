@@ -77,10 +77,11 @@ export class AuthService {
     }
     
     // Mark email as verified and clear OTP
-    user.isEmailVerified = true;
-    user.otpCode = null;
-    user.otpExpires = null;
-    await this.usersService.update(user.id, user);
+    await this.usersService.update(user.id, {
+      isEmailVerified: true,
+      otpCode: null,
+      otpExpires: null,
+    } as UpdateUserDto);
     
     // Return user and success message (no tokens)
     return {
@@ -119,15 +120,19 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto): Promise<TokenResponse & { user: any }> {
+    // Determine if input is email or username
+    const isEmail = loginDto.usernameOrEmail.includes('@');
+    let user;
+    
     try {
-      // Determine if input is email or username
-      const isEmail = loginDto.usernameOrEmail.includes('@');
-      let user;
-      
       if (isEmail) {
         user = await this.usersService.findByEmail(loginDto.usernameOrEmail);
       } else {
         user = await this.usersService.findByUsername(loginDto.usernameOrEmail);
+      }
+      
+      if (!user) {
+        throw new UnauthorizedException('No user found with the provided credentials');
       }
       
       // Check if email is verified
@@ -138,7 +143,7 @@ export class AuthService {
       const isPasswordValid = await user.comparePassword(loginDto.password);
       
       if (!isPasswordValid) {
-        throw new UnauthorizedException('Invalid credentials');
+        throw new UnauthorizedException('Invalid password');
       }
       
       const tokens = this.generateTokens({
@@ -151,7 +156,13 @@ export class AuthService {
         ...tokens,
       };
     } catch (error) {
-      throw new UnauthorizedException('Invalid credentials');
+      // If it's already an UnauthorizedException, just rethrow it
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      // For other errors, log them and return a generic message
+      console.error('Login error:', error);
+      throw new UnauthorizedException('Login failed. Please try again.');
     }
   }
 

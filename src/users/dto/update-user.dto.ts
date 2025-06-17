@@ -39,6 +39,15 @@ export class UpdateUserDto {
   email?: string;
 
   @ApiProperty({
+    description: 'Whether the user\'s email is verified',
+    example: true,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isEmailVerified?: boolean;
+
+  @ApiProperty({
     description: 'Password for the user account',
     example: 'NewPassword123!',
     required: false,
@@ -50,14 +59,6 @@ export class UpdateUserDto {
     message: 'Password must contain at least 1 uppercase letter, 1 lowercase letter, and 1 number or special character',
   })
   password?: string;
-
-  @ApiPropertyOptional({
-    description: 'Whether the user\'s email is verified',
-    default: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  isEmailVerified?: boolean;
 
   @ApiPropertyOptional({
     description: 'OTP code for email verification',

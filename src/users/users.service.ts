@@ -64,7 +64,10 @@ export class UsersService {
   }
 
   async findById(id: string): Promise<User> {
-    const user = await this.usersRepository.findOne({ where: { id } });
+    const user = await this.usersRepository.findOne({ 
+      where: { id },
+      select: ['id', 'username', 'email', 'isEmailVerified', 'password', 'otpCode', 'otpExpires'] 
+    });
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
@@ -72,7 +75,10 @@ export class UsersService {
   }
 
   async findByUsername(username: string): Promise<User> {
-    const user = await this.usersRepository.findOne({ where: { username } });
+    const user = await this.usersRepository.findOne({ 
+      where: { username },
+      select: ['id', 'username', 'email', 'isEmailVerified', 'password', 'otpCode', 'otpExpires'] 
+    });
     if (!user) {
       throw new NotFoundException(`User with username ${username} not found`);
     }
@@ -80,7 +86,10 @@ export class UsersService {
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.usersRepository.findOne({ where: { email } });
+    return this.usersRepository.findOne({ 
+      where: { email },
+      select: ['id', 'username', 'email', 'isEmailVerified', 'password', 'otpCode', 'otpExpires'] 
+    });
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {

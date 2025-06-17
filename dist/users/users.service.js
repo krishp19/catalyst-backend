@@ -64,21 +64,30 @@ let UsersService = class UsersService {
         };
     }
     async findById(id) {
-        const user = await this.usersRepository.findOne({ where: { id } });
+        const user = await this.usersRepository.findOne({
+            where: { id },
+            select: ['id', 'username', 'email', 'isEmailVerified', 'password', 'otpCode', 'otpExpires']
+        });
         if (!user) {
             throw new common_1.NotFoundException(`User with ID ${id} not found`);
         }
         return user;
     }
     async findByUsername(username) {
-        const user = await this.usersRepository.findOne({ where: { username } });
+        const user = await this.usersRepository.findOne({
+            where: { username },
+            select: ['id', 'username', 'email', 'isEmailVerified', 'password', 'otpCode', 'otpExpires']
+        });
         if (!user) {
             throw new common_1.NotFoundException(`User with username ${username} not found`);
         }
         return user;
     }
     async findByEmail(email) {
-        return this.usersRepository.findOne({ where: { email } });
+        return this.usersRepository.findOne({
+            where: { email },
+            select: ['id', 'username', 'email', 'isEmailVerified', 'password', 'otpCode', 'otpExpires']
+        });
     }
     async update(id, updateUserDto) {
         const user = await this.findById(id);

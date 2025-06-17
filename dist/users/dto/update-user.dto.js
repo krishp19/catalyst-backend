@@ -47,6 +47,16 @@ __decorate([
 ], UpdateUserDto.prototype, "email", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
+        description: 'Whether the user\'s email is verified',
+        example: true,
+        required: false,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], UpdateUserDto.prototype, "isEmailVerified", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
         description: 'Password for the user account',
         example: 'NewPassword123!',
         required: false,
@@ -59,15 +69,6 @@ __decorate([
     }),
     __metadata("design:type", String)
 ], UpdateUserDto.prototype, "password", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)({
-        description: 'Whether the user\'s email is verified',
-        default: false,
-    }),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsBoolean)(),
-    __metadata("design:type", Boolean)
-], UpdateUserDto.prototype, "isEmailVerified", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({
         description: 'OTP code for email verification',
