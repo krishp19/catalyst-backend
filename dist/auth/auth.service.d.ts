@@ -15,15 +15,12 @@ export declare class AuthService {
     constructor(usersService: UsersService, jwtService: JwtService, configService: ConfigService, emailService: EmailService);
     register(createUserDto: CreateUserDto): Promise<{
         user: import("../users/entities/user.entity").User;
-        accessToken: string;
         message: string;
     }>;
     sendOtpEmail(email: string): Promise<boolean>;
     verifyOtp(verifyOtpDto: VerifyOtpDto): Promise<{
-        message: string;
-        accessToken: string;
-        refreshToken: string;
         user: import("../users/entities/user.entity").User;
+        message: string;
     }>;
     resendOtp(resendOtpDto: ResendOtpDto): Promise<{
         success: boolean;

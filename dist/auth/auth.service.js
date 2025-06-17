@@ -29,13 +29,8 @@ let AuthService = class AuthService {
         }
         const user = await this.usersService.create(createUserDto);
         await this.sendOtpEmail(user.email);
-        const accessToken = this.generateAccessToken({
-            sub: user.id,
-            username: user.username,
-        });
         return {
             user,
-            accessToken,
             message: 'Registration successful. Please check your email for the OTP to verify your account.',
         };
     }
@@ -69,13 +64,8 @@ let AuthService = class AuthService {
         user.otpCode = null;
         user.otpExpires = null;
         await this.usersService.update(user.id, user);
-        const tokens = this.generateTokens({
-            sub: user.id,
-            username: user.username,
-        });
         return {
             user,
-            ...tokens,
             message: 'Email verified successfully',
         };
     }

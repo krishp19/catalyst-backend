@@ -10,7 +10,6 @@ export declare class AuthController {
     constructor(authService: AuthService);
     register(createUserDto: CreateUserDto): Promise<{
         user: User;
-        accessToken: string;
         message: string;
     }>;
     login(loginDto: LoginDto): Promise<import("../common/interfaces").TokenResponse & {
@@ -21,10 +20,8 @@ export declare class AuthController {
         message: string;
     }>;
     verifyOtp(verifyOtpDto: VerifyOtpDto): Promise<{
-        message: string;
-        accessToken: string;
-        refreshToken: string;
         user: User;
+        message: string;
     }>;
     resendOtp(resendOtpDto: ResendOtpDto): Promise<{
         success: boolean;

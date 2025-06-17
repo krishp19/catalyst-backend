@@ -32,15 +32,9 @@ export class AuthService {
     // Generate and save OTP
     await this.sendOtpEmail(user.email);
     
-    // Generate tokens (access only, refresh token will be given after email verification)
-    const accessToken = this.generateAccessToken({
-      sub: user.id,
-      username: user.username,
-    });
-    
+    // Return user and success message (no tokens)
     return {
       user,
-      accessToken,
       message: 'Registration successful. Please check your email for the OTP to verify your account.',
     };
   }
@@ -82,21 +76,15 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired OTP');
     }
     
-    // Mark email as verified
+    // Mark email as verified and clear OTP
     user.isEmailVerified = true;
     user.otpCode = null;
     user.otpExpires = null;
     await this.usersService.update(user.id, user);
     
-    // Generate full tokens after successful verification
-    const tokens = this.generateTokens({
-      sub: user.id,
-      username: user.username,
-    });
-    
+    // Return user and success message (no tokens)
     return {
       user,
-      ...tokens,
       message: 'Email verified successfully',
     };
   }
