@@ -6,9 +6,13 @@ import { CreateUserDto } from '../users/dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { VerifyForgotPasswordOtpDto } from './dto/verify-forgot-password-otp.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdateUserDto } from '../users/dto/update-user.dto';
 import { JwtPayload, TokenResponse } from '../common/interfaces';
 import { EmailService } from '../email/email.service';
-import { UpdateUserDto } from '../users/dto/update-user.dto';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -39,28 +43,99 @@ export class AuthService {
     };
   }
   
-  async sendOtpEmail(email: string): Promise<boolean> {
+  async sendOtpEmail(email: string, isPasswordReset: boolean = false): Promise<boolean> {
     const user = await this.usersService.findByEmail(email);
     if (!user) {
       throw new NotFoundException('User not found');
     }
     
-    // Generate and save OTP
-    user.generateOtpCode();
-    const updateData: Partial<UpdateUserDto & { otpCode: string; otpExpires: Date }> = {
-      otpCode: user.otpCode,
-      otpExpires: user.otpExpires,
-    };
-    await this.usersService.update(user.id, updateData as UpdateUserDto);
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
     
-    // Send OTP email
-    return this.emailService.sendOtpEmail(user.email, user.otpCode);
+    const updateData: UpdateUserDto = {
+      ...(isPasswordReset 
+        ? { 
+            passwordResetOtp: otp, 
+            passwordResetExpires: otpExpires // Use Date object directly
+          } 
+        : {
+            otpCode: otp,
+            otpExpires: otpExpires // Use Date object directly
+          })
+    };
+
+    await this.usersService.update(user.id, updateData);
+
+    // Send OTP email using the EmailService
+    await this.emailService.sendOtpEmail(
+      user.email, 
+      otp,
+      isPasswordReset ? 'forgot-password' : 'verify-email'
+    );
+
+    return true;
+  }
+
+  async requestPasswordReset(forgotPasswordDto: ForgotPasswordDto): Promise<{ message: string }> {
+    const { email } = forgotPasswordDto;
+    const user = await this.usersService.findByEmail(email);
+    
+    if (!user) {
+      return { message: 'No account found with this email address' };
+    }
+
+    await this.sendOtpEmail(email, true);
+    
+    return { 
+      message: 'Password reset OTP has been sent to your email' 
+    };
+  }
+
+  async verifyPasswordResetOtp(verifyOtpDto: VerifyForgotPasswordOtpDto): Promise<{ message: string }> {
+    const { email, otp } = verifyOtpDto;
+    const user = await this.usersService.findByEmail(email);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Check if OTP matches and is not expired
+    if (user.passwordResetOtp !== otp || new Date() > new Date(user.passwordResetExpires)) {
+      throw new UnauthorizedException('Invalid or expired OTP');
+    }
+
+    return { message: 'OTP verified successfully' };
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<{ message: string }> {
+    const { email, otp, newPassword } = resetPasswordDto;
+    const user = await this.usersService.findByEmail(email);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Verify OTP again before allowing password reset
+    if (user.passwordResetOtp !== otp || new Date() > new Date(user.passwordResetExpires)) {
+      throw new UnauthorizedException('Invalid or expired OTP');
+    }
+
+    // Update the password and clear the reset OTP
+    await this.usersService.update(user.id, {
+      password: newPassword, // The service will hash the password
+      passwordResetOtp: null,
+      passwordResetExpires: null,
+    } as UpdateUserDto);
+
+    return { message: 'Password has been reset successfully' };
   }
   
-  async verifyOtp(verifyOtpDto: VerifyOtpDto) {
+  async verifyOtp(verifyOtpDto: VerifyOtpDto): Promise<{ message: string; user: User }> {
     const { email, otp } = verifyOtpDto;
     
     const user = await this.usersService.findByEmail(email);
+    
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -71,8 +146,7 @@ export class AuthService {
     }
     
     // Verify OTP
-    const isOtpValid = user.verifyOtpCode(otp);
-    if (!isOtpValid) {
+    if (!user.otpCode || user.otpCode !== otp || new Date() > new Date(user.otpExpires)) {
       throw new BadRequestException('Invalid or expired OTP');
     }
     
@@ -89,11 +163,12 @@ export class AuthService {
       message: 'Email verified successfully',
     };
   }
-  
-  async resendOtp(resendOtpDto: ResendOtpDto) {
+
+  async resendOtp(resendOtpDto: ResendOtpDto): Promise<{ success: boolean; message: string }> {
     const { email } = resendOtpDto;
     
     const user = await this.usersService.findByEmail(email);
+    
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -103,8 +178,8 @@ export class AuthService {
     }
     
     // Check if we need to wait before resending (rate limiting)
-    if (user.otpExpires && user.otpExpires > new Date()) {
-      const secondsLeft = Math.ceil((user.otpExpires.getTime() - Date.now()) / 1000);
+    if (user.otpExpires && new Date(user.otpExpires) > new Date()) {
+      const secondsLeft = Math.ceil((new Date(user.otpExpires).getTime() - Date.now()) / 1000);
       throw new BadRequestException(
         `Please wait ${secondsLeft} seconds before requesting a new OTP`
       );
@@ -119,10 +194,10 @@ export class AuthService {
     };
   }
 
-  async login(loginDto: LoginDto): Promise<TokenResponse & { user: any }> {
+  async login(loginDto: LoginDto): Promise<{ accessToken: string; refreshToken: string; user: any }> {
     // Determine if input is email or username
     const isEmail = loginDto.usernameOrEmail.includes('@');
-    let user;
+    let user: any; // TODO: Replace 'any' with proper User type
     
     try {
       if (isEmail) {
@@ -161,18 +236,27 @@ export class AuthService {
         throw error;
       }
       // For other errors, log them and return a generic message
-      console.error('Login error:', error);
-      throw new UnauthorizedException('Login failed. Please try again.');
+      console.error('Refresh token error:', error);
+      throw new UnauthorizedException('Invalid refresh token');
     }
   }
 
-  async refreshToken(refreshToken: string): Promise<TokenResponse> {
+
+  async refreshToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
     try {
-      const decoded = this.jwtService.verify(refreshToken, {
+      const decoded = this.jwtService.verify<{ sub: string; username: string; type: string }>(refreshToken, {
         secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
       });
       
+      if (decoded.type !== 'refresh') {
+        throw new UnauthorizedException('Invalid token type');
+      }
+      
       const user = await this.usersService.findById(decoded.sub);
+      
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
       
       return this.generateTokens({
         sub: user.id,

@@ -5,5 +5,5 @@ export declare class EmailService {
     private transporter;
     constructor(configService: ConfigService);
     private initializeTransporter;
-    sendOtpEmail(email: string, otpCode: string): Promise<boolean>;
+    sendOtpEmail(email: string, otpCode: string, emailType?: 'verify-email' | 'forgot-password'): Promise<boolean>;
 }

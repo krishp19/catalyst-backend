@@ -31,11 +31,11 @@ let EmailService = EmailService_1 = class EmailService {
             },
         });
     }
-    async sendOtpEmail(email, otpCode) {
+    async sendOtpEmail(email, otpCode, emailType = 'verify-email') {
         const mailOptions = {
             from: `"Catalyst Community" <${this.configService.get('EMAIL_USER')}>`,
             to: email,
-            subject: '🔑 Verify Your Email Address | Catalyst',
+            subject: emailType === 'forgot-password' ? '🔑 Password Reset Request | Catalyst' : '🔑 Verify Your Email Address | Catalyst',
             html: `
       <!DOCTYPE html>
       <html>

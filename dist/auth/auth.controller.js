@@ -21,6 +21,9 @@ const login_dto_1 = require("./dto/login.dto");
 const refresh_token_dto_1 = require("./dto/refresh-token.dto");
 const verify_otp_dto_1 = require("./dto/verify-otp.dto");
 const resend_otp_dto_1 = require("./dto/resend-otp.dto");
+const forgot_password_dto_1 = require("./dto/forgot-password.dto");
+const verify_forgot_password_otp_dto_1 = require("./dto/verify-forgot-password-otp.dto");
+const reset_password_dto_1 = require("./dto/reset-password.dto");
 const jwt_auth_guard_1 = require("./guards/jwt-auth.guard");
 const current_user_decorator_1 = require("../common/decorators/current-user.decorator");
 const user_entity_1 = require("../users/entities/user.entity");
@@ -45,6 +48,15 @@ let AuthController = class AuthController {
     }
     async resendOtp(resendOtpDto) {
         return this.authService.resendOtp(resendOtpDto);
+    }
+    async forgotPassword(forgotPasswordDto) {
+        return this.authService.requestPasswordReset(forgotPasswordDto);
+    }
+    async verifyPasswordResetOtp(verifyOtpDto) {
+        return this.authService.verifyPasswordResetOtp(verifyOtpDto);
+    }
+    async resetPassword(resetPasswordDto) {
+        return this.authService.resetPassword(resetPasswordDto);
     }
 };
 exports.AuthController = AuthController;
@@ -122,6 +134,49 @@ __decorate([
     __metadata("design:paramtypes", [resend_otp_dto_1.ResendOtpDto]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "resendOtp", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Request password reset' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'If an account with the email exists, a password reset OTP has been sent',
+    }),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, common_1.Post)('forgot-password'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [forgot_password_dto_1.ForgotPasswordDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "forgotPassword", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Verify password reset OTP' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'OTP verified successfully',
+    }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid or expired OTP' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'User not found' }),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, common_1.Post)('verify-password-reset-otp'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [verify_forgot_password_otp_dto_1.VerifyForgotPasswordOtpDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "verifyPasswordResetOtp", null);
+__decorate([
+    (0, swagger_1.ApiOperation)({ summary: 'Reset password' }),
+    (0, swagger_1.ApiResponse)({
+        status: 200,
+        description: 'Password has been reset successfully',
+    }),
+    (0, swagger_1.ApiResponse)({ status: 400, description: 'Invalid or expired OTP' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'User not found' }),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, common_1.Post)('reset-password'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [reset_password_dto_1.ResetPasswordDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "resetPassword", null);
 exports.AuthController = AuthController = __decorate([
     (0, swagger_1.ApiTags)('auth'),
     (0, common_1.Controller)('auth'),

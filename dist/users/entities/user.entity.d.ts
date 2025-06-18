@@ -11,6 +11,8 @@ export declare class User {
     isEmailVerified: boolean;
     otpCode: string;
     otpExpires: Date;
+    passwordResetOtp: string;
+    passwordResetExpires: Date;
     password: string;
     bio: string;
     avatarUrl: string;

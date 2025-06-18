@@ -39,6 +39,14 @@ export class User {
   @Exclude({ toPlainOnly: true })
   otpExpires: Date;
 
+  @Column({ nullable: true })
+  @Exclude({ toPlainOnly: true })
+  passwordResetOtp: string;
+
+  @Column({ type: 'timestamp', nullable: true })
+  @Exclude({ toPlainOnly: true })
+  passwordResetExpires: Date;
+
   @Column()
   @Exclude({ toPlainOnly: true })
   password: string;

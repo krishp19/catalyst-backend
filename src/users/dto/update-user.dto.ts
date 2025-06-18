@@ -48,6 +48,25 @@ export class UpdateUserDto {
   isEmailVerified?: boolean;
 
   @ApiProperty({
+    description: 'OTP code for password reset',
+    example: '123456',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @Length(6, 6)
+  passwordResetOtp?: string;
+
+  @ApiProperty({
+    description: 'Expiration timestamp for the password reset OTP',
+    example: '2023-12-31T23:59:59.999Z',
+    required: false,
+  })
+  @IsOptional()
+  @IsDateString()
+  passwordResetExpires?: string | Date;
+
+  @ApiProperty({
     description: 'Password for the user account',
     example: 'NewPassword123!',
     required: false,

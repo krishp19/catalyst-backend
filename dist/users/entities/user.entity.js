@@ -71,6 +71,16 @@ __decorate([
     __metadata("design:type", Date)
 ], User.prototype, "otpExpires", void 0);
 __decorate([
+    (0, typeorm_1.Column)({ nullable: true }),
+    (0, class_transformer_1.Exclude)({ toPlainOnly: true }),
+    __metadata("design:type", String)
+], User.prototype, "passwordResetOtp", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'timestamp', nullable: true }),
+    (0, class_transformer_1.Exclude)({ toPlainOnly: true }),
+    __metadata("design:type", Date)
+], User.prototype, "passwordResetExpires", void 0);
+__decorate([
     (0, typeorm_1.Column)(),
     (0, class_transformer_1.Exclude)({ toPlainOnly: true }),
     __metadata("design:type", String)

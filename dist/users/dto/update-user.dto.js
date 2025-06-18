@@ -57,6 +57,27 @@ __decorate([
 ], UpdateUserDto.prototype, "isEmailVerified", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
+        description: 'OTP code for password reset',
+        example: '123456',
+        required: false,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Length)(6, 6),
+    __metadata("design:type", String)
+], UpdateUserDto.prototype, "passwordResetOtp", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Expiration timestamp for the password reset OTP',
+        example: '2023-12-31T23:59:59.999Z',
+        required: false,
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsDateString)(),
+    __metadata("design:type", Object)
+], UpdateUserDto.prototype, "passwordResetExpires", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
         description: 'Password for the user account',
         example: 'NewPassword123!',
         required: false,

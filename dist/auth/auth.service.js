@@ -34,18 +34,65 @@ let AuthService = class AuthService {
             message: 'Registration successful. Please check your email for the OTP to verify your account.',
         };
     }
-    async sendOtpEmail(email) {
+    async sendOtpEmail(email, isPasswordReset = false) {
         const user = await this.usersService.findByEmail(email);
         if (!user) {
             throw new common_1.NotFoundException('User not found');
         }
-        user.generateOtpCode();
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
         const updateData = {
-            otpCode: user.otpCode,
-            otpExpires: user.otpExpires,
+            ...(isPasswordReset
+                ? {
+                    passwordResetOtp: otp,
+                    passwordResetExpires: otpExpires
+                }
+                : {
+                    otpCode: otp,
+                    otpExpires: otpExpires
+                })
         };
         await this.usersService.update(user.id, updateData);
-        return this.emailService.sendOtpEmail(user.email, user.otpCode);
+        await this.emailService.sendOtpEmail(user.email, otp, isPasswordReset ? 'forgot-password' : 'verify-email');
+        return true;
+    }
+    async requestPasswordReset(forgotPasswordDto) {
+        const { email } = forgotPasswordDto;
+        const user = await this.usersService.findByEmail(email);
+        if (!user) {
+            return { message: 'No account found with this email address' };
+        }
+        await this.sendOtpEmail(email, true);
+        return {
+            message: 'Password reset OTP has been sent to your email'
+        };
+    }
+    async verifyPasswordResetOtp(verifyOtpDto) {
+        const { email, otp } = verifyOtpDto;
+        const user = await this.usersService.findByEmail(email);
+        if (!user) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        if (user.passwordResetOtp !== otp || new Date() > new Date(user.passwordResetExpires)) {
+            throw new common_1.UnauthorizedException('Invalid or expired OTP');
+        }
+        return { message: 'OTP verified successfully' };
+    }
+    async resetPassword(resetPasswordDto) {
+        const { email, otp, newPassword } = resetPasswordDto;
+        const user = await this.usersService.findByEmail(email);
+        if (!user) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        if (user.passwordResetOtp !== otp || new Date() > new Date(user.passwordResetExpires)) {
+            throw new common_1.UnauthorizedException('Invalid or expired OTP');
+        }
+        await this.usersService.update(user.id, {
+            password: newPassword,
+            passwordResetOtp: null,
+            passwordResetExpires: null,
+        });
+        return { message: 'Password has been reset successfully' };
     }
     async verifyOtp(verifyOtpDto) {
         const { email, otp } = verifyOtpDto;
@@ -56,8 +103,7 @@ let AuthService = class AuthService {
         if (user.isEmailVerified) {
             throw new common_1.BadRequestException('Email already verified');
         }
-        const isOtpValid = user.verifyOtpCode(otp);
-        if (!isOtpValid) {
+        if (!user.otpCode || user.otpCode !== otp || new Date() > new Date(user.otpExpires)) {
             throw new common_1.BadRequestException('Invalid or expired OTP');
         }
         await this.usersService.update(user.id, {
@@ -79,8 +125,8 @@ let AuthService = class AuthService {
         if (user.isEmailVerified) {
             throw new common_1.BadRequestException('Email already verified');
         }
-        if (user.otpExpires && user.otpExpires > new Date()) {
-            const secondsLeft = Math.ceil((user.otpExpires.getTime() - Date.now()) / 1000);
+        if (user.otpExpires && new Date(user.otpExpires) > new Date()) {
+            const secondsLeft = Math.ceil((new Date(user.otpExpires).getTime() - Date.now()) / 1000);
             throw new common_1.BadRequestException(`Please wait ${secondsLeft} seconds before requesting a new OTP`);
         }
         await this.sendOtpEmail(email);
@@ -122,8 +168,8 @@ let AuthService = class AuthService {
             if (error instanceof common_1.UnauthorizedException) {
                 throw error;
             }
-            console.error('Login error:', error);
-            throw new common_1.UnauthorizedException('Login failed. Please try again.');
+            console.error('Refresh token error:', error);
+            throw new common_1.UnauthorizedException('Invalid refresh token');
         }
     }
     async refreshToken(refreshToken) {
@@ -131,7 +177,13 @@ let AuthService = class AuthService {
             const decoded = this.jwtService.verify(refreshToken, {
                 secret: this.configService.get('JWT_REFRESH_SECRET'),
             });
+            if (decoded.type !== 'refresh') {
+                throw new common_1.UnauthorizedException('Invalid token type');
+            }
             const user = await this.usersService.findById(decoded.sub);
+            if (!user) {
+                throw new common_1.UnauthorizedException('User not found');
+            }
             return this.generateTokens({
                 sub: user.id,
                 username: user.username,
