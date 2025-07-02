@@ -53,19 +53,28 @@ export class AuthService {
     const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
     
-    const updateData: UpdateUserDto = {
-      ...(isPasswordReset 
-        ? { 
-            passwordResetOtp: otp, 
-            passwordResetExpires: otpExpires // Use Date object directly
-          } 
-        : {
-            otpCode: otp,
-            otpExpires: otpExpires // Use Date object directly
-          })
-    };
-
-    await this.usersService.update(user.id, updateData);
+    console.log(`Sending OTP ${otp} to ${email} for ${isPasswordReset ? 'password reset' : 'email verification'}`);
+    
+    // Update the appropriate fields based on the OTP type
+    const updateData: any = {};
+    
+    if (isPasswordReset) {
+      updateData.passwordResetOtp = otp;
+      updateData.passwordResetExpires = otpExpires;
+      // Clear any previous OTP data
+      updateData.otpCode = null;
+      updateData.otpExpires = null;
+    } else {
+      updateData.otpCode = otp;
+      updateData.otpExpires = otpExpires;
+      // Clear any previous password reset data
+      updateData.passwordResetOtp = null;
+      updateData.passwordResetExpires = null;
+    }
+    
+    console.log('Updating user with:', updateData);
+    const updatedUser = await this.usersService.update(user.id, updateData);
+    console.log('User after update:', updatedUser);
 
     // Send OTP email using the EmailService
     await this.emailService.sendOtpEmail(
@@ -94,17 +103,40 @@ export class AuthService {
 
   async verifyPasswordResetOtp(verifyOtpDto: VerifyForgotPasswordOtpDto): Promise<{ message: string }> {
     const { email, otp } = verifyOtpDto;
+    console.log('Received DTO:', verifyOtpDto);
+    
+    // Trim and ensure the OTP is a string
+    const otpCode = otp.toString().trim();
+    
     const user = await this.usersService.findByEmail(email);
-
+    console.log('Retrieved user:', user);
+  
     if (!user) {
       throw new NotFoundException('User not found');
     }
-
-    // Check if OTP matches and is not expired
-    if (user.passwordResetOtp !== otp || new Date() > new Date(user.passwordResetExpires)) {
+  
+    console.log('Provided OTP (trimmed):', otpCode, typeof otpCode);
+    console.log('Stored OTP:', user.passwordResetOtp, typeof user.passwordResetOtp);
+    console.log('Current time:', new Date());
+    console.log('OTP expiry:', user.passwordResetExpires);
+    
+    // Check if OTP exists and is not expired
+    if (!user.passwordResetOtp || !user.passwordResetExpires) {
+      console.log('No OTP found or OTP already used');
       throw new UnauthorizedException('Invalid or expired OTP');
     }
-
+    
+    // Compare OTPs as strings after trimming
+    const isOtpValid = user.passwordResetOtp.trim() === otpCode;
+    const isOtpExpired = new Date() > new Date(user.passwordResetExpires);
+    
+    console.log('OTP valid:', isOtpValid);
+    console.log('OTP expired:', isOtpExpired);
+    
+    if (!isOtpValid || isOtpExpired) {
+      throw new UnauthorizedException('Invalid or expired OTP');
+    }
+  
     return { message: 'OTP verified successfully' };
   }
 

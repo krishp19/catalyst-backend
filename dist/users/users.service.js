@@ -86,7 +86,17 @@ let UsersService = class UsersService {
     async findByEmail(email) {
         return this.usersRepository.findOne({
             where: { email },
-            select: ['id', 'username', 'email', 'isEmailVerified', 'password', 'otpCode', 'otpExpires']
+            select: [
+                'id',
+                'username',
+                'email',
+                'isEmailVerified',
+                'password',
+                'otpCode',
+                'otpExpires',
+                'passwordResetOtp',
+                'passwordResetExpires'
+            ]
         });
     }
     async update(id, updateUserDto) {
