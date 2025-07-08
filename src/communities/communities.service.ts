@@ -299,19 +299,38 @@ export class CommunitiesService {
     page: number = 1,
     limit: number = 10,
   ): Promise<PaginatedResponseDto<Community>> {
-    const [communities, total] = await this.communitiesRepository
+    // First, get the communities with pagination
+    const query = this.communitiesRepository
       .createQueryBuilder('community')
       .innerJoin('community.members', 'member', 'member.userId = :userId', { userId })
       .leftJoinAndSelect('community.members', 'members')
-      .select([
-        'community',
-        'COUNT(members.id) as memberCount',
-      ])
-      .groupBy('community.id')
+      .leftJoinAndSelect('community.topics', 'topics')
+      .loadRelationCountAndMap('community.memberCount', 'community.members')
       .orderBy('community.createdAt', 'DESC')
       .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
+      .take(limit);
+
+    const [communities, total] = await query.getManyAndCount();
+
+    // Get the member count for each community
+    const communityIds = communities.map(c => c.id);
+    const memberCounts = await this.communityMembersRepository
+      .createQueryBuilder('cm')
+      .select('cm.communityId', 'communityId')
+      .addSelect('COUNT(cm.id)', 'count')
+      .where('cm.communityId IN (:...communityIds)', { communityIds })
+      .groupBy('cm.communityId')
+      .getRawMany();
+
+    // Map the member counts to the communities
+    const memberCountMap = new Map(
+      memberCounts.map(mc => [mc.communityId, parseInt(mc.count, 10)])
+    );
+
+    // Set the memberCount for each community
+    communities.forEach(community => {
+      community.memberCount = memberCountMap.get(community.id) || 0;
+    });
 
     const totalPages = Math.ceil(total / limit);
 

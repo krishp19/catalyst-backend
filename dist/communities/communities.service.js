@@ -221,19 +221,28 @@ let CommunitiesService = class CommunitiesService {
         return membership ? membership.role : null;
     }
     async getJoinedCommunities(userId, page = 1, limit = 10) {
-        const [communities, total] = await this.communitiesRepository
+        const query = this.communitiesRepository
             .createQueryBuilder('community')
             .innerJoin('community.members', 'member', 'member.userId = :userId', { userId })
             .leftJoinAndSelect('community.members', 'members')
-            .select([
-            'community',
-            'COUNT(members.id) as memberCount',
-        ])
-            .groupBy('community.id')
+            .leftJoinAndSelect('community.topics', 'topics')
+            .loadRelationCountAndMap('community.memberCount', 'community.members')
             .orderBy('community.createdAt', 'DESC')
             .skip((page - 1) * limit)
-            .take(limit)
-            .getManyAndCount();
+            .take(limit);
+        const [communities, total] = await query.getManyAndCount();
+        const communityIds = communities.map(c => c.id);
+        const memberCounts = await this.communityMembersRepository
+            .createQueryBuilder('cm')
+            .select('cm.communityId', 'communityId')
+            .addSelect('COUNT(cm.id)', 'count')
+            .where('cm.communityId IN (:...communityIds)', { communityIds })
+            .groupBy('cm.communityId')
+            .getRawMany();
+        const memberCountMap = new Map(memberCounts.map(mc => [mc.communityId, parseInt(mc.count, 10)]));
+        communities.forEach(community => {
+            community.memberCount = memberCountMap.get(community.id) || 0;
+        });
         const totalPages = Math.ceil(total / limit);
         return {
             items: communities,
